@@ -10,6 +10,7 @@ export type SavedPanel = "simple" | "advanced" | "zones";
 export type Theme = "dark" | "light";
 export type PresetId = string;
 export type RateInputMode = "rate" | "duration";
+export type AdvancedSequenceLayout = "wide" | "tall";
 
 export interface SequencePoint {
   id: string;
@@ -91,6 +92,7 @@ export interface Settings extends PresetSnapshot {
   keyboardKeyCase: KeyboardKeyCase;
   minimizeToTray: boolean;
   theme: Theme;
+  advancedSequenceLayout: AdvancedSequenceLayout;
   alwaysOnTop: boolean;
   accentColor: string;
   presets: PresetDefinition[];
@@ -127,7 +129,7 @@ export const SETTINGS_LIMITS = {
   durationSeconds: { min: 0, max: 59 },
   durationMilliseconds: { min: 0, max: 999 },
   stopZoneDimension: { min: 1 },
-  sequencePointClicks: { min: 1, max: 1000 },
+  sequencePointClicks: { min: 1, max: 100000 },
 } as const;
 
 export const PRESET_SNAPSHOT_KEYS = [
@@ -259,6 +261,7 @@ export function createDefaultSettings(version: string): Settings {
     keyboardKeyCase: "lower",
     minimizeToTray: false,
     theme: "dark",
+    advancedSequenceLayout: "wide",
     alwaysOnTop: false,
     accentColor: DEFAULT_ACCENT_COLOR,
     presets: [],
@@ -473,6 +476,10 @@ function sanitizePresetSnapshot(
 
 function sanitizeRateInputMode(value: unknown): RateInputMode {
   return value === "duration" ? "duration" : "rate";
+}
+
+function sanitizeAdvancedSequenceLayout(value: unknown): AdvancedSequenceLayout {
+  return value === "tall" ? "tall" : "wide";
 }
 
 function sanitizeSequencePoints(value: unknown): SequencePoint[] {
@@ -700,6 +707,9 @@ export function sanitizeSettings(
     disableScreenshots: false,
     lastPanel: sanitizeSavedPanel(saved.lastPanel),
     theme: sanitizeTheme(saved.theme),
+    advancedSequenceLayout: sanitizeAdvancedSequenceLayout(
+      saved.advancedSequenceLayout,
+    ),
     strictHotkeyModifiers: sanitizeBoolean(saved.strictHotkeyModifiers, defaults.strictHotkeyModifiers),
     inputType: saved.inputType === "keyboard" ? "keyboard" : "mouse",
     keyboardKey: typeof saved.keyboardKey === "string" ? saved.keyboardKey : "",

@@ -4,10 +4,10 @@ pub struct SequencePoint {
     pub x: i32,
     pub y: i32,
     #[serde(default = "default_sequence_point_clicks")]
-    pub clicks: u16,
+    pub clicks: u32,
 }
 
-fn default_sequence_point_clicks() -> u16 {
+fn default_sequence_point_clicks() -> u32 {
     1
 }
 

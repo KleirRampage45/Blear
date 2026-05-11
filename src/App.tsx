@@ -48,14 +48,21 @@ type DropdownOverflowDetail = {
   bottom?: number;
 };
 
-function getPanelSize(tab: Tab, hasUpdate: boolean) {
+function getPanelSize(
+  tab: Tab,
+  hasUpdate: boolean,
+  advancedSequenceLayout: Settings["advancedSequenceLayout"],
+) {
   const extra = hasUpdate ? 30 : 0;
   if (tab === "simple") {
     return { width: 650, height: 175 + extra };
   }
   if (tab === "settings") return { width: 560, height: 720 + extra };
-  if (tab === "zones") return { width: 550, height: 400 + extra };
-  return { width: 980, height: 527 + extra };
+  if (tab === "zones") return { width: 560, height: 400 + extra };
+  if (advancedSequenceLayout === "tall") {
+    return { width: 560, height: 720 + extra };
+  }
+  return { width: 912, height: 527 + extra };
 }
 
 const textScale = await invoke<number>("get_text_scale_factor");
@@ -92,6 +99,7 @@ const DEFAULT_STATUS: ClickerStatus = {
   lastError: null,
   stopReason: null,
   activeSequenceIndex: null,
+  activeSequenceTick: 0,
 };
 
 const DEFAULT_APP_INFO: AppInfo = {
@@ -597,7 +605,11 @@ export default function App() {
           getComputedStyle(document.documentElement).fontSize,
         );
 
-        const preferredSize = getPanelSize(tab, !!updateInfo);
+        const preferredSize = getPanelSize(
+          tab,
+          !!updateInfo,
+          settings.advancedSequenceLayout,
+        );
         const { width, height } = await getClampedPanelSize(
           preferredSize,
           textScale,
@@ -760,6 +772,7 @@ export default function App() {
               showInfo={true}
               running={status.running}
               activeSequenceIndex={status.activeSequenceIndex}
+              activeSequenceTick={status.activeSequenceTick}
             />
           )}
           {tab === "zones" && (

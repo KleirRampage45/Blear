@@ -11,6 +11,7 @@ const store = new LazyStore("settings.json");
 export const APP_VERSION = await getVersion();
 
 export type {
+  AdvancedSequenceLayout,
   ClickInterval,
   ClickMode,
   InputType,
@@ -33,6 +34,7 @@ export interface ClickerStatus {
   lastError: string | null;
   stopReason: string | null;
   activeSequenceIndex: number | null;
+  activeSequenceTick: number;
 }
 
 export interface AppInfo {

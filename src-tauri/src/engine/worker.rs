@@ -138,6 +138,7 @@ pub fn start_clicker_inner(app: &AppHandle) -> Result<ClickerStatusPayload, Stri
 
     if config.use_sequence() {
         state.active_sequence_index.store(0, Ordering::SeqCst);
+        state.active_sequence_tick.store(0, Ordering::SeqCst);
     }
     let expected_generation = state.run_generation.fetch_add(1, Ordering::SeqCst) + 1;
     state.running.store(true, Ordering::SeqCst);
@@ -157,6 +158,7 @@ pub fn start_clicker_inner(app: &AppHandle) -> Result<ClickerStatusPayload, Stri
         let state = app_handle.state::<ClickerState>();
         state.running.store(false, Ordering::SeqCst);
         state.active_sequence_index.store(-1, Ordering::SeqCst);
+        state.active_sequence_tick.store(0, Ordering::SeqCst);
 
         *state.stop_reason.lock().unwrap() = Some(outcome.stop_reason.clone());
         *state.last_error.lock().unwrap() = None;
@@ -174,6 +176,7 @@ pub fn stop_clicker_inner(
     let state = app.state::<ClickerState>();
     state.running.store(false, Ordering::SeqCst);
     state.active_sequence_index.store(-1, Ordering::SeqCst);
+    state.active_sequence_tick.store(0, Ordering::SeqCst);
     state.run_generation.fetch_add(1, Ordering::SeqCst);
     if let Some(reason) = stop_reason {
         *state.stop_reason.lock().unwrap() = Some(reason);
@@ -282,7 +285,7 @@ pub fn build_config(settings: &ClickerSettings) -> Result<ClickerConfig, String>
             .map(|point| SequenceTarget {
                 x: point.x,
                 y: point.y,
-                clicks: usize::from(point.clicks.clamp(1, 1000)),
+                clicks: point.clicks.clamp(1, 100000) as usize,
             })
             .collect(),
         offset: 0.0,
@@ -316,6 +319,7 @@ pub fn current_status(app: &AppHandle) -> ClickerStatusPayload {
     let last_error = state.last_error.lock().unwrap().clone();
     let stop_reason = state.stop_reason.lock().unwrap().clone();
     let active_sequence_index = state.active_sequence_index.load(Ordering::SeqCst);
+    let active_sequence_tick = state.active_sequence_tick.load(Ordering::SeqCst);
 
     ClickerStatusPayload {
         running: state.running.load(Ordering::SeqCst),
@@ -327,6 +331,7 @@ pub fn current_status(app: &AppHandle) -> ClickerStatusPayload {
         } else {
             None
         },
+        active_sequence_tick,
     }
 }
 
@@ -407,6 +412,7 @@ pub fn start_clicker(config: ClickerConfig, control: RunControl) -> RunOutcome {
         state
             .active_sequence_index
             .store(sequence_index as i64, Ordering::SeqCst);
+        state.active_sequence_tick.fetch_add(1, Ordering::SeqCst);
         emit_status(&control.app);
     }
 
@@ -538,6 +544,7 @@ pub fn start_clicker(config: ClickerConfig, control: RunControl) -> RunOutcome {
                 state
                     .active_sequence_index
                     .store(sequence_index as i64, Ordering::SeqCst);
+                state.active_sequence_tick.fetch_add(1, Ordering::SeqCst);
                 emit_status(&control.app);
             }
         }

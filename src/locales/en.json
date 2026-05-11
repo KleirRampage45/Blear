@@ -3,7 +3,8 @@
     "en": "English",
     "es": "Espa?ol",
     "fr": "Fran?ais",
-    "ar": "???????"
+    "ar": "???????",
+    "de": "Deutsch"
   },
   "common": {
     "on": "On",
@@ -64,6 +65,10 @@
     "sectionAppearanceDescription": "Theme and accent color preferences.",
     "theme": "Theme",
     "themeDescription": "Switch between dark and light themes.",
+    "advancedLayout": "Advanced Layout",
+    "advancedLayoutDescription": "Choose whether Sequence Clicking sits beside the other advanced controls or below Double Click.",
+    "advancedLayoutWide": "Wide",
+    "advancedLayoutTall": "Tall",
     "accentColor": "Accent Color",
     "accentColorDescription": "Customize the primary accent used for active states.",
     "sectionPresets": "Presets",

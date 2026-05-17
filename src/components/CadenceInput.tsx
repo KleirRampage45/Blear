@@ -292,7 +292,7 @@ export default function CadenceInput({ settings, update, variant }: Props) {
   }
 
   const modeToggle = (
-    <div className="adv-seg-group">
+    <div className="adv-seg-group adv-cadence-mode-toggle">
       {RATE_INPUT_MODE_OPTIONS.map((mode) => (
         <button
           key={mode}
@@ -355,7 +355,7 @@ export default function CadenceInput({ settings, update, variant }: Props) {
               </div>
             </div>
           ) : (
-            <div className="adv-value-outline">
+            <div className="adv-value-outline adv-value-outline--duration">
               <div className="adv-foc">
                 <input
                   type="number"

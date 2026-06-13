@@ -727,7 +727,7 @@ export default function App() {
 
       await invoke("reset_settings");
       await clearSavedSettings();
-      await invoke("set_autostart_enabled", { enabled: false }).catch(() => {});
+      await invoke("set_autostart_enabled", { enabled: false }).catch(() => { });
       await getCurrentWindow().setAlwaysOnTop(DEFAULT_SETTINGS.alwaysOnTop);
 
       lastValidHotkeyRef.current = DEFAULT_SETTINGS.hotkey;

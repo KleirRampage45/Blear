@@ -727,7 +727,7 @@ export default function App() {
 
       await invoke("reset_settings");
       await clearSavedSettings();
-      await invoke("set_autostart_enabled", { enabled: false }).catch(() => {});
+      await invoke("set_autostart_enabled", { enabled: false }).catch(() => { });
       await getCurrentWindow().setAlwaysOnTop(DEFAULT_SETTINGS.alwaysOnTop);
 
       lastValidHotkeyRef.current = DEFAULT_SETTINGS.hotkey;
@@ -742,6 +742,15 @@ export default function App() {
     }
   };
 
+  const stopKeyRef = useRef(0);
+  const prevStopReasonRef = useRef(status.stopReason);
+  useEffect(() => {
+    if (status.stopReason && status.stopReason !== prevStopReasonRef.current) {
+      stopKeyRef.current += 1;
+    }
+    prevStopReasonRef.current = status.stopReason;
+  }, [status.stopReason]);
+
   return (
     <I18nProvider language={settings.language}>
       <div className="app-root" data-tab={tab}>
@@ -754,6 +763,7 @@ export default function App() {
               ? status.stopReason
               : null
           }
+          stopKey={stopKeyRef.current}
           isAlwaysOnTop={settings.alwaysOnTop}
           onToggleAlwaysOnTop={handleToggleAlwaysOnTop}
           onRequestClose={handleWindowClose}

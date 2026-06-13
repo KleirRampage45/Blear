@@ -1,9 +1,10 @@
 # v3.7.1 - 13.06.2026 (d.m.y)
 ## New
 ## Fix
+- Fixed stop reason repeating when switching between simple and advanced mode.
 - Behaviour of multiple windows was changed back to 3.6.1 | This makes close to Tray behaviour inconsistent but the multiple window feature seems to be more demanded.
 ## Changed
-- Updated dependencies
+- Updated dependencies.
 
 # v3.7.0 - 21.05.2026 (d.m.y)
 ## New

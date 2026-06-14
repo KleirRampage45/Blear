@@ -1,6 +1,7 @@
 # v3.7.1 - 13.06.2026 (d.m.y)
 ## New
 ## Fix
+- Fixed hotkey self-triggering during auto-clicks by flagging synthetic input and filtering it out in hotkey detection.
 - Fixed stop reason repeating when switching between simple and advanced mode.
 - Behaviour of multiple windows was changed back to 3.6.1 | This makes close to Tray behaviour inconsistent but the multiple window feature seems to be more demanded.
 ## Changed

@@ -1,4 +1,4 @@
-# v3.7.1 - 13.06.2026 (d.m.y)
+# v3.7.1 - 15.06.2026 (d.m.y)
 ## New
 - Scrolling on drop-down fields now supported.
 - Scrolling on number fields now supports Shift and Shift + Ctrl for bigger increments (5 and 10 respectively)

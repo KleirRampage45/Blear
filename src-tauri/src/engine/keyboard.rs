@@ -104,8 +104,13 @@ pub fn send_key_presses(
     uppercase: bool,
     plan: ClickCyclePlan,
     control: &RunControl,
+    should_abort: &dyn Fn() -> bool,
 ) {
     if count == 0 {
+        return;
+    }
+
+    if should_abort() {
         return;
     }
 
@@ -119,6 +124,9 @@ pub fn send_key_presses(
     let mut sleep_for = |duration| sleep_interruptible(duration, control);
 
     for _ in 0..count {
+        if should_abort() {
+            return;
+        }
         if !execute_click_cycle(
             plan,
             &mut || send_key_down(vk, use_shift),

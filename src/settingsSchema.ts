@@ -10,6 +10,14 @@ export type SavedPanel = "simple" | "advanced" | "zones";
 export type Theme = "dark" | "light";
 export type PresetId = string;
 export type RateInputMode = "rate" | "duration";
+export type ProcessListMode = "whitelist" | "blacklist";
+export type ProcessListBehavior = "pause" | "stop";
+
+export interface ProcessListEntry {
+  name: string;
+  behavior: ProcessListBehavior;
+  enabled: boolean;
+}
 export type AdvancedSequenceLayout = "wide" | "tall";
 
 export interface SequencePoint {
@@ -206,6 +214,18 @@ const PRESET_FIELDS = {
     default: [] as SequencePoint[],
     ui: { section: "core", control: "custom" },
   },
+  processListEnabled: {
+    default: false,
+    ui: { section: "failsafe", control: "toggle" },
+  },
+  processListMode: {
+    default: "whitelist" as ProcessListMode,
+    ui: { section: "failsafe", control: "select" },
+  },
+  processListEntries: {
+    default: [] as ProcessListEntry[],
+    ui: { section: "failsafe", control: "custom" },
+  },
 } satisfies Record<string, FieldDef<unknown>>;
 
 //All Other settings that do not need to be saved by presets go here.
@@ -288,6 +308,10 @@ const SETTINGS_ONLY_FIELDS = {
   },
   strictHotkeyModifiers: {
     default: false,
+    ui: { section: "behavior", control: "toggle" },
+  },
+  taskSwitcherStopEnabled: {
+    default: true,
     ui: { section: "behavior", control: "toggle" },
   },
   extendedClickSpeedLimit: {
@@ -408,6 +432,7 @@ export const SETTINGS_UI_SCHEMA = [
       "showStopOverlay",
       "showStopReason",
       "strictHotkeyModifiers",
+      "taskSwitcherStopEnabled",
       "extendedClickSpeedLimit",
     ],
   },
@@ -538,6 +563,31 @@ function sanitizeAdvancedSequenceLayout(
   return sanitizeEnum(value, fallback, ["wide", "tall"]);
 }
 
+function sanitizeProcessListEntries(value: unknown): ProcessListEntry[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item): ProcessListEntry | null => {
+      if (typeof item === "string") {
+        const name = item.trim().toLowerCase();
+        if (!name) return null;
+        return { name, behavior: "stop", enabled: true };
+      }
+      if (!item || typeof item !== "object") return null;
+      const candidate = item as Partial<ProcessListEntry>;
+      const name =
+        typeof candidate.name === "string"
+          ? candidate.name.trim().toLowerCase()
+          : "";
+      if (!name) return null;
+      const behavior: ProcessListBehavior =
+        candidate.behavior === "pause" ? "pause" : "stop";
+      const enabled =
+        typeof candidate.enabled === "boolean" ? candidate.enabled : true;
+      return { name, behavior, enabled };
+    })
+    .filter((entry): entry is ProcessListEntry => entry !== null);
+}
+
 function sanitizeSequencePoints(value: unknown): SequencePoint[] {
   if (!Array.isArray(value)) return [];
 
@@ -658,6 +708,7 @@ function sanitizePresetSnapshot(
     TIME_LIMIT_UNIT_OPTIONS,
   );
   snapshot.sequencePoints = sanitizeSequencePoints(saved.sequencePoints);
+  snapshot.processListEntries = sanitizeProcessListEntries(saved.processListEntries);
 
   return snapshot;
 }
@@ -751,6 +802,7 @@ export function sanitizeSettings(
     TIME_LIMIT_UNIT_OPTIONS,
   );
   presetSettings.sequencePoints = sanitizeSequencePoints(saved.sequencePoints);
+  presetSettings.processListEntries = sanitizeProcessListEntries(saved.processListEntries);
   presetSettings.speedVariation = clampNumber(
     saved.speedVariation,
     legacySpeedVariation,

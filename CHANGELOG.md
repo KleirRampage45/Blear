@@ -1,3 +1,16 @@
+# v3.8.0 - 16.06.2026 (d.m.y)
+## New
+- Process whitelist/blacklist with per-application Stop/Pause behavior in the Zones panel.
+- Automatic stopping on Alt+Tab / Win+Tab (On/Off toggle in Settings → Behavior).
+- Search bar for filtering applications in the process list.
+- Empty whitelist warning shown in the UI and title bar when clicker starts.
+## Changed
+- Stop reason now visible in simple mode (not just advanced/zones).
+- Pre-click abort checks now run before every individual click (failsafe, time limit, process list, task switcher).
+- Failsafe (corner + edge) and custom stop zone sections have moved slightly.
+- Zero-click runs are no longer recorded to stats or printed to console in dev mode.
+
+
 # v3.7.2 - 15.06.2026 (d.m.y)
 ## Fixed
 - clicker not clicking.

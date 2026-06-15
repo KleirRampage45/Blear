@@ -219,8 +219,19 @@ pub fn send_batch(down: u32, up: u32, n: usize) {
     };
 }
 
-pub fn send_clicks(down: u32, up: u32, count: usize, plan: ClickCyclePlan, control: &RunControl) {
+pub fn send_clicks(
+    down: u32,
+    up: u32,
+    count: usize,
+    plan: ClickCyclePlan,
+    control: &RunControl,
+    should_abort: &dyn Fn() -> bool,
+) {
     if count == 0 {
+        return;
+    }
+
+    if should_abort() {
         return;
     }
 
@@ -233,6 +244,9 @@ pub fn send_clicks(down: u32, up: u32, count: usize, plan: ClickCyclePlan, contr
     let mut sleep_for = |duration| sleep_interruptible(duration, control);
 
     for _ in 0..count {
+        if should_abort() {
+            return;
+        }
         if !execute_click_cycle(
             plan,
             &mut || send_mouse_event(down),

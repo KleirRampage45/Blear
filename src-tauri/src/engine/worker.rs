@@ -18,6 +18,7 @@ use super::keyboard::{is_alphabetic_vk, send_key_presses};
 use super::mouse::{
     get_button_flags, get_cursor_pos, move_mouse, send_clicks, smooth_move, VirtualScreenRect,
 };
+use super::process;
 use super::rng::SmallRng;
 use super::ClickerConfig;
 use super::NtSetTimerResolution;
@@ -136,6 +137,16 @@ pub fn start_clicker_inner(app: &AppHandle) -> Result<ClickerStatusPayload, Stri
         }
     }
 
+    if config.process_list_enabled
+        && config.process_list_mode == crate::engine::ProcessListMode::Whitelist
+        && config.process_list_entries.is_empty()
+    {
+        *state.warning.lock().unwrap() =
+            Some(String::from("Whitelist mode has no entries selected"));
+    } else {
+        *state.warning.lock().unwrap() = None;
+    }
+
     if config.use_sequence() {
         state.active_sequence_index.store(0, Ordering::SeqCst);
         state.active_sequence_tick.store(0, Ordering::SeqCst);
@@ -148,8 +159,10 @@ pub fn start_clicker_inner(app: &AppHandle) -> Result<ClickerStatusPayload, Stri
     std::thread::spawn(move || {
         let outcome = engine_start(config, control.clone());
 
-        print_run_stats(outcome.click_count, outcome.elapsed_secs, outcome.avg_cpu);
-        record_run(outcome.click_count, outcome.elapsed_secs, outcome.avg_cpu);
+        if outcome.click_count > 0 {
+            print_run_stats(outcome.click_count, outcome.elapsed_secs, outcome.avg_cpu);
+            record_run(outcome.click_count, outcome.elapsed_secs, outcome.avg_cpu);
+        }
 
         if !control.is_current_generation() {
             return;
@@ -181,6 +194,7 @@ pub fn stop_clicker_inner(
     if let Some(reason) = stop_reason {
         *state.stop_reason.lock().unwrap() = Some(reason);
     }
+    *state.warning.lock().unwrap() = None;
     let payload = current_status(app);
     emit_status(app);
     Ok(payload)
@@ -316,6 +330,21 @@ pub fn build_config(settings: &ClickerSettings) -> Result<ClickerConfig, String>
         input_type: if is_keyboard { 1 } else { 0 },
         key_code,
         keyboard_uppercase,
+        process_list_enabled: settings.process_list_enabled,
+        process_list_mode: match settings.process_list_mode.as_str() {
+            "blacklist" => crate::engine::ProcessListMode::Blacklist,
+            _ => crate::engine::ProcessListMode::Whitelist,
+        },
+        process_list_entries: settings
+            .process_list_entries
+            .clone()
+            .into_iter()
+            .map(|mut entry| {
+                entry.name = crate::engine::process::normalize_process_name(&entry.name);
+                entry
+            })
+            .collect(),
+        task_switcher_stop_enabled: settings.task_switcher_stop_enabled,
     })
 }
 
@@ -323,14 +352,17 @@ pub fn current_status(app: &AppHandle) -> ClickerStatusPayload {
     let state = app.state::<ClickerState>();
     let last_error = state.last_error.lock().unwrap().clone();
     let stop_reason = state.stop_reason.lock().unwrap().clone();
+    let warning = state.warning.lock().unwrap().clone();
     let active_sequence_index = state.active_sequence_index.load(Ordering::SeqCst);
     let active_sequence_tick = state.active_sequence_tick.load(Ordering::SeqCst);
 
     ClickerStatusPayload {
         running: state.running.load(Ordering::SeqCst),
+        paused: state.paused.load(Ordering::SeqCst),
         click_count: get_click_count(),
         last_error,
         stop_reason,
+        warning,
         active_sequence_index: if active_sequence_index >= 0 {
             Some(active_sequence_index as usize)
         } else {
@@ -469,19 +501,65 @@ pub fn start_clicker(config: ClickerConfig, control: RunControl) -> RunOutcome {
         emit_status(&control.app);
     }
 
+    let should_abort = || {
+        should_stop_for_failsafe(&config).is_some()
+            || (config.time_limit > 0.0 && start_time.elapsed().as_secs_f64() >= config.time_limit)
+            || (config.task_switcher_stop_enabled && process::is_task_switcher_active())
+            || (config.process_list_enabled
+                && process::check_process_list(&config) == Some(super::ProcessListBehavior::Stop))
+    };
+
     while control.is_active() {
-        if let Some(reason) = should_stop_for_failsafe(&config) {
-            stop_reason = reason;
+        if should_abort() {
+            if let Some(reason) = should_stop_for_failsafe(&config) {
+                stop_reason = reason;
+            } else if config.task_switcher_stop_enabled && process::is_task_switcher_active() {
+                stop_reason = String::from("Blocked by task switcher");
+            } else if config.process_list_enabled
+                && process::check_process_list(&config) == Some(super::ProcessListBehavior::Stop)
+            {
+                stop_reason = String::from("Blocked by process list");
+            } else {
+                stop_reason = format!("Time limit reached ({:.1}s)", config.time_limit);
+            }
             break;
+        }
+
+        if config.process_list_enabled {
+            if let Some(behavior) = process::check_process_list(&config) {
+                if behavior == super::ProcessListBehavior::Pause {
+                    let state = control.app.state::<ClickerState>();
+                    state.paused.store(true, Ordering::SeqCst);
+                    emit_status(&control.app);
+
+                    loop {
+                        std::thread::sleep(Duration::from_millis(200));
+                        if !state.running.load(Ordering::SeqCst) {
+                            break;
+                        }
+                        if state.run_generation.load(Ordering::SeqCst)
+                            != control.expected_generation
+                        {
+                            break;
+                        }
+                        if process::check_process_list(&config).is_none() {
+                            break;
+                        }
+                    }
+
+                    state.paused.store(false, Ordering::SeqCst);
+                    emit_status(&control.app);
+
+                    if !state.running.load(Ordering::SeqCst) {
+                        stop_reason = String::from("Blocked by process list");
+                        break;
+                    }
+                }
+            }
         }
 
         if config.limit > 0 && click_count >= config.limit as i64 {
             stop_reason = format!("Click limit reached ({})", config.limit);
-            break;
-        }
-
-        if config.time_limit > 0.0 && start_time.elapsed().as_secs_f64() >= config.time_limit {
-            stop_reason = format!("Time limit reached ({:.1}s)", config.time_limit);
             break;
         }
 
@@ -570,6 +648,7 @@ pub fn start_clicker(config: ClickerConfig, control: RunControl) -> RunOutcome {
                     config.keyboard_uppercase,
                     double_cycle_plan,
                     &control,
+                    &should_abort,
                 );
             }
             if cycle_batch.single_cycles > 0 {
@@ -579,6 +658,7 @@ pub fn start_clicker(config: ClickerConfig, control: RunControl) -> RunOutcome {
                     config.keyboard_uppercase,
                     single_cycle_plan,
                     &control,
+                    &should_abort,
                 );
             }
         } else {
@@ -589,6 +669,7 @@ pub fn start_clicker(config: ClickerConfig, control: RunControl) -> RunOutcome {
                     cycle_batch.double_cycles,
                     double_cycle_plan,
                     &control,
+                    &should_abort,
                 );
             }
             if cycle_batch.single_cycles > 0 {
@@ -598,6 +679,7 @@ pub fn start_clicker(config: ClickerConfig, control: RunControl) -> RunOutcome {
                     cycle_batch.single_cycles,
                     single_cycle_plan,
                     &control,
+                    &should_abort,
                 );
             }
         }
@@ -707,6 +789,11 @@ mod tests {
             input_type: 0,
             key_code: 0,
             keyboard_uppercase: false,
+            process_list_enabled: false,
+            process_list_mode: crate::engine::ProcessListMode::Whitelist,
+
+            process_list_entries: Vec::new(),
+            task_switcher_stop_enabled: false,
         }
     }
 

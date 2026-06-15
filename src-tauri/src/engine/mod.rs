@@ -2,6 +2,7 @@ pub mod cycle;
 pub mod failsafe;
 pub mod keyboard;
 pub mod mouse;
+pub mod process;
 pub mod rng;
 pub mod stats;
 pub mod worker;
@@ -9,6 +10,28 @@ use std::sync::atomic::AtomicI64;
 pub use worker::start_clicker;
 pub const AUTOCLICKER_EXTRA_INFO: usize = 0x800D_A5A5; //Just a random Identifier
 use self::mouse::VirtualScreenRect;
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum ProcessListMode {
+    Whitelist,
+    Blacklist,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum ProcessListBehavior {
+    Pause,
+    Stop,
+}
+
+#[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProcessListEntry {
+    pub name: String,
+    pub behavior: ProcessListBehavior,
+    pub enabled: bool,
+}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct SequenceTarget {
@@ -47,6 +70,10 @@ pub struct ClickerConfig {
     pub input_type: i32,
     pub key_code: u16,
     pub keyboard_uppercase: bool,
+    pub process_list_enabled: bool,
+    pub process_list_mode: ProcessListMode,
+    pub process_list_entries: Vec<ProcessListEntry>,
+    pub task_switcher_stop_enabled: bool,
 }
 
 #[derive(Clone, Debug, serde::Serialize)]

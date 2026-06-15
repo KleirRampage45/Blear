@@ -56,6 +56,8 @@
     "stopReasonAlertDescription": "מציג בשורת הכותרת למה הלוחץ נעצר.",
     "strictHotkeyModifiers": "התאמה מדויקת של מקשי שינוי",
     "strictHotkeyModifiersDescription": "פועל: קיצור המקשים יופעל רק כשמקשי השינוי תואמים בדיוק. כבוי: המערכת תתעלם ממקשי שינוי נוספים שמוחזקים.",
+    "taskSwitcherStopEnabled": "עצור ב-Alt+Tab / Win+Tab",
+    "taskSwitcherStopEnabledDescription": "עצור אוטומטית את המקליד כאשר מחליף המשימות או תצוגת המשימות פתוחים.",
     "extendedClickSpeedLimit": "מגבלת מהירות קליקים מורחבת",
     "extendedClickSpeedLimitDescription": "מעלה את מגבלת מהירות הקליקים ל-{limit} CPS. זה לא מומלץ; רוב המשחקים רושמים רק בערך 60 CPS.",
     "extendedClickSpeedLimitDialogTitle": "⚠️ להפעיל מגבלת 1000 CPS?",
@@ -180,7 +182,21 @@
     "pickCountdownUnavailable": "לכידת מיקום תתחיל בעוד {seconds} שניות. הזז את הסמן לנקודת היעד והמתן עד שהיא תישמר.",
     "pickCountdownSingularUnavailable": "לכידת מיקום תתחיל בעוד שנייה אחת. הזז את הסמן לנקודת היעד והמתן עד שהיא תישמר.",
     "customStopZoneAddingIn": "מגדיר בעוד",
-    "customStopZoneCapturing": "מגדיר..."
+    "customStopZoneCapturing": "מגדיר...",
+    "processList": "רשימת תהליכים",
+    "processListDescription": "משהה לחיצות כשאפליקציות מסוימות בחזית. תהליכים מסומנים נמצאים ברשימה לבנה או שחורה לפי המצב שנבחר.",
+    "processListUnavailable": "הפעל את רשימת התהליכים כדי לנהל כללי אפליקציות.",
+    "whitelist": "רשימה לבנה",
+    "blacklist": "רשימה שחורה",
+    "whitelistEmptyWarning": "מצב רשימה לבנה פעיל ללא יישומים שנבחרו. לחיצות ייחסמו בכל היישומים.",
+    "refresh": "רענן",
+    "refreshing": "מרענן...",
+    "processListEmpty": "לא נמצאו תהליכים. לחץ על רענון.",
+    "noProcessNamed": "אין תהליך בשם \"{query}\"",
+    "searchIn": "חפש ב",
+    "applications": "יישומים",
+    "behaviorStop": "עצור",
+    "behaviorPause": "השהה"
   },
   "options": {
     "interval": {
@@ -303,6 +319,9 @@
     "bottomEdgeFailsafe": "עצירת בטיחות בקצה התחתון",
     "leftEdgeFailsafe": "עצירת בטיחות בקצה השמאלי",
     "clickLimitReached": "הגעת למגבלת הלחיצות ({count})",
-    "timeLimitReached": "הגעת למגבלת הזמן ({time})"
+    "timeLimitReached": "הגעת למגבלת הזמן ({time})",
+    "processNotInWhitelist": "התהליך לא ברשימה הלבנה: {name}",
+    "processInBlacklist": "התהליך ברשימה השחורה: {name}",
+    "blockedByTaskSwitcher": "נחסם על ידי מחלף המשימות"
   }
 }

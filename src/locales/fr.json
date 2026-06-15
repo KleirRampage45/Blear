@@ -56,6 +56,8 @@
     "stopReasonAlertDescription": "Affiche dans la barre de titre pourquoi le clicker s'est arrêté.",
     "strictHotkeyModifiers": "Modificateurs stricts du raccourci",
     "strictHotkeyModifiersDescription": "Activé : le raccourci ne se déclenche que si les modificateurs correspondent exactement. Désactivé : les modificateurs supplémentaires sont ignorés.",
+    "taskSwitcherStopEnabled": "Arrêter sur Alt+Tab / Win+Tab",
+    "taskSwitcherStopEnabledDescription": "Arrêter automatiquement le cliqueur lorsque le sélecteur de tâches ou la vue des tâches est ouvert.",
     "extendedClickSpeedLimit": "Limite étendue de vitesse de clic",
     "extendedClickSpeedLimitDescription": "Augmente la limite de vitesse de clic à {limit} CPS. Ce n'est pas recommandé ; la plupart des jeux n'enregistrent qu'environ 60 CPS.",
     "extendedClickSpeedLimitDialogTitle": "⚠️ Activer la limite de 1000 CPS ?",
@@ -179,8 +181,22 @@
     "pickInProgressUnavailable": "La capture de position est déjà en cours. Attendez que le choix actuel se termine.",
     "pickCountdownUnavailable": "La capture de position commence dans {seconds} secondes. Déplacez votre curseur vers le point cible et attendez qu'il soit enregistré.",
     "pickCountdownSingularUnavailable": "La capture de position commence dans 1 seconde. Déplacez votre curseur vers le point cible et attendez qu'il soit enregistré.",
-    "customStopZoneAddingIn": "Définition dans",
-    "customStopZoneCapturing": "Définition..."
+"customStopZoneAddingIn": "Définition dans",
+    "customStopZoneCapturing": "Définition...",
+    "processList": "Liste de processus",
+    "processListDescription": "Mets en pause les clics quand certaines applications sont au premier plan. Les processus cochés sont en liste blanche ou noire selon le mode choisi.",
+    "processListUnavailable": "Active la liste de processus pour gérer les règles d'application.",
+    "whitelist": "Liste blanche",
+    "blacklist": "Liste noire",
+    "whitelistEmptyWarning": "Le mode liste blanche est actif mais aucune application n'est sélectionnée. Les clics seront bloqués sur toutes les applications.",
+    "refresh": "Actualiser",
+    "refreshing": "Actualisation...",
+    "processListEmpty": "Aucun processus trouvé. Clique sur Actualiser.",
+    "noProcessNamed": "aucun processus nommé \"{query}\"",
+    "searchIn": "rechercher dans",
+    "applications": "applications",
+    "behaviorStop": "Arrêter",
+    "behaviorPause": "Pause"
   },
   "options": {
     "interval": { "s": "Seconde", "m": "Minute", "h": "Heure", "d": "Jour" },
@@ -242,6 +258,9 @@
     "bottomEdgeFailsafe": "Sécurité bord inférieur",
     "leftEdgeFailsafe": "Sécurité bord gauche",
     "clickLimitReached": "Limite de clics atteinte ({count})",
-    "timeLimitReached": "Limite de temps atteinte ({time})"
+    "timeLimitReached": "Limite de temps atteinte ({time})",
+    "processNotInWhitelist": "Processus pas dans la liste blanche : {name}",
+    "processInBlacklist": "Processus dans la liste noire : {name}",
+    "blockedByTaskSwitcher": "Bloqué par le sélecteur de tâches"
   }
 }

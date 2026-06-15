@@ -59,7 +59,7 @@ function getPanelSize(
     return { width: 650, height: 175 + extra };
   }
   if (tab === "settings") return { width: 560, height: 720 + extra };
-  if (tab === "zones") return { width: 560, height: 400 + extra };
+  if (tab === "zones") return { width: 750, height: 720 + extra };
   if (advancedSequenceLayout === "tall") {
     return { width: 560, height: 720 + extra };
   }
@@ -96,9 +96,11 @@ async function getClampedPanelSize(
 
 const DEFAULT_STATUS: ClickerStatus = {
   running: false,
+  paused: false,
   clickCount: 0,
   lastError: null,
   stopReason: null,
+  warning: null,
   activeSequenceIndex: null,
   activeSequenceTick: 0,
 };
@@ -807,12 +809,14 @@ export default function App() {
           tab={tab}
           setTab={handleTabChange}
           running={status.running}
+          paused={status.paused}
           stopReason={
-            settings.showStopReason && (tab === "advanced" || tab === "zones")
+            settings.showStopReason && (tab === "simple" || tab === "advanced" || tab === "zones")
               ? status.stopReason
               : null
           }
           stopKey={stopKey}
+          warning={status.warning}
           isAlwaysOnTop={settings.alwaysOnTop}
           onToggleAlwaysOnTop={handleToggleAlwaysOnTop}
           onRequestClose={handleWindowClose}

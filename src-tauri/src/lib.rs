@@ -45,6 +45,8 @@ pub fn run() {
             sequence_pick_active: AtomicBool::new(false),
             custom_stop_zone_pick_active: AtomicBool::new(false),
             settings_initialized: AtomicBool::new(false),
+            paused: Arc::new(AtomicBool::new(false)),
+            warning: Mutex::new(None),
         })
         .setup(|app| {
             if cfg!(debug_assertions) {
@@ -170,6 +172,7 @@ pub fn run() {
             ui_commands::quit_app,
             ui_commands::get_autostart_enabled,
             ui_commands::set_autostart_enabled,
+            ui_commands::list_processes,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

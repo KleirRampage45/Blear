@@ -869,6 +869,30 @@ export default function SettingsPanel({
           <div className="settings-row">
             <div className="settings-label-group">
               <span className="settings-label">
+                {t("settings.taskSwitcherStopEnabled")}
+              </span>
+              <span className="settings-sublabel">
+                {t("settings.taskSwitcherStopEnabledDescription")}
+              </span>
+            </div>
+            <div className="settings-seg-group">
+              {onOffOptions.map((option) => (
+                <button
+                  key={String(option.value)}
+                  className={`settings-seg-btn ${settings.taskSwitcherStopEnabled === option.value ? "active" : ""}`}
+                  onClick={() =>
+                    update({ taskSwitcherStopEnabled: option.value })
+                  }
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="settings-row">
+            <div className="settings-label-group">
+              <span className="settings-label">
                 {t("settings.extendedClickSpeedLimit")}
               </span>
               <span className="settings-sublabel">

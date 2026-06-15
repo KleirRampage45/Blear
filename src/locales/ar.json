@@ -56,6 +56,8 @@
     "stopReasonAlertDescription": "يظهر سبب توقف النقر في شريط العنوان.",
     "strictHotkeyModifiers": "معدّلات اختصار صارمة",
     "strictHotkeyModifiersDescription": "تشغيل: يتم تنشيط الاختصار فقط عند تطابق المعدّلات بالضبط. إيقاف: يتم تجاهل المعدّلات الإضافية المضغوطة.",
+    "taskSwitcherStopEnabled": "إيقاف عند Alt+Tab / Win+Tab",
+    "taskSwitcherStopEnabledDescription": "إيقاف النقّاش تلقائياً عند فتح محوّل المهام أو عرض المهام.",
     "extendedClickSpeedLimit": "حد سرعة النقر الموسع",
     "extendedClickSpeedLimitDescription": "يرفع حد سرعة النقر إلى {limit} نقرة/ث. هذا غير موصى به؛ فمعظم الألعاب لا تسجل إلا حوالي 60 نقرة/ث.",
     "extendedClickSpeedLimitDialogTitle": "⚠️ تفعيل حد 1000 نقرة/ث؟",
@@ -179,8 +181,22 @@
     "pickInProgressUnavailable": "التقاط الموضع قيد التنفيذ بالفعل. انتظر حتى ينتهي الاختيار الحالي.",
     "pickCountdownUnavailable": "يبدأ التقاط الموضع خلال {seconds} ثوانٍ. انقل المؤشر إلى الموقع المستهدف وانتظر حتى يتم حفظه.",
     "pickCountdownSingularUnavailable": "يبدأ التقاط الموضع خلال ثانية واحدة. انقل المؤشر إلى الموقع المستهدف وانتظر حتى يتم حفظه.",
-    "customStopZoneAddingIn": "سيتم التعيين خلال",
-    "customStopZoneCapturing": "جارٍ التعيين..."
+"customStopZoneAddingIn": "سيتم التعيين خلال",
+    "customStopZoneCapturing": "جارٍ التعيين...",
+    "processList": "قائمة العمليات",
+    "processListDescription": "إيقاف النقر مؤقتاً عندما تكون تطبيقات معينة في المقدمة. العمليات المحددة تكون في القائمة البيضاء أو السوداء حسب الوضع المحدد.",
+    "processListUnavailable": "قم بتفعيل قائمة العمليات لإدارة قواعد التطبيقات.",
+    "whitelist": "القائمة البيضاء",
+    "blacklist": "القائمة السوداء",
+    "whitelistEmptyWarning": "وضع القائمة البيضاء نشط بدون تطبيقات محددة. سيتم حظر النقر على جميع التطبيقات.",
+    "refresh": "تحديث",
+    "refreshing": "جارٍ التحديث...",
+    "processListEmpty": "لم يتم العثور على عمليات. انقر على تحديث.",
+    "noProcessNamed": "لا توجد عملية باسم \"{query}\"",
+    "searchIn": "ابحث في",
+    "applications": "تطبيقات",
+    "behaviorStop": "إيقاف",
+    "behaviorPause": "إيقاف مؤقت"
   },
   "options": {
     "interval": {
@@ -303,6 +319,9 @@
     "bottomEdgeFailsafe": "إجراء أمان الحافة السفلية",
     "leftEdgeFailsafe": "إجراء أمان الحافة اليسرى",
     "clickLimitReached": "تم الوصول إلى حد النقر ({count})",
-    "timeLimitReached": "تم الوصول إلى حد الوقت ({time})"
+    "timeLimitReached": "تم الوصول إلى حد الوقت ({time})",
+    "processNotInWhitelist": "العملية ليست في القائمة البيضاء: {name}",
+    "processInBlacklist": "العملية في القائمة السوداء: {name}",
+    "blockedByTaskSwitcher": "محظور بواسطة محوّل المهام"
   }
 }

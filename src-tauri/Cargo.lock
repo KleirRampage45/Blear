@@ -6,9 +6,11 @@ version = 3
 name = "BlurAutoClicker"
 version = "3.7.2"
 dependencies = [
+ "base64 0.22.1",
  "dirs",
  "hex",
  "hmac",
+ "image",
  "log",
  "raw-window-handle",
  "reqwest",

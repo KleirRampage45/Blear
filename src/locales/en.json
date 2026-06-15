@@ -56,6 +56,8 @@
     "stopReasonAlertDescription": "Shows why the clicker stopped in the title bar.",
     "strictHotkeyModifiers": "Strict Hotkey Modifiers",
     "strictHotkeyModifiersDescription": "On: hotkey only fires when modifier keys match exactly. Off: extra held modifiers are ignored.",
+    "taskSwitcherStopEnabled": "Stop on Alt+Tab / Win+Tab",
+    "taskSwitcherStopEnabledDescription": "Automatically stop the clicker when the task switcher or task view is open.",
     "extendedClickSpeedLimit": "Extended Click Speed Limit",
     "extendedClickSpeedLimitDescription": "Raises the click speed cap to {limit} CPS. This is not recommended; most games only register around 60 CPS.",
     "extendedClickSpeedLimitDialogTitle": "⚠️ Enable the 1000 CPS limit?",
@@ -180,7 +182,21 @@
     "pickCountdownUnavailable": "Position capture starts in {seconds} seconds. Move your cursor to the target spot and wait for it to be saved.",
     "pickCountdownSingularUnavailable": "Position capture starts in 1 second. Move your cursor to the target spot and wait for it to be saved.",
     "customStopZoneAddingIn": "Setting in",
-    "customStopZoneCapturing": "Setting..."
+    "customStopZoneCapturing": "Setting...",
+    "processList": "Process List",
+    "processListDescription": "Pause clicking when certain applications are focused. Checked processes are whitelisted or blacklisted depending on the mode selected.",
+    "processListUnavailable": "Enable Process List to manage application rules.",
+    "whitelist": "Whitelist",
+    "blacklist": "Blacklist",
+    "whitelistEmptyWarning": "Whitelist mode is active with no applications selected. Clicking will be blocked everywhere.",
+    "refresh": "Refresh",
+    "refreshing": "Refreshing...",
+    "processListEmpty": "No processes found. Click Refresh.",
+    "noProcessNamed": "no process named \"{query}\"",
+    "searchIn": "search in",
+    "applications": "applications",
+    "behaviorStop": "Stop",
+    "behaviorPause": "Pause"
   },
   "options": {
     "interval": {
@@ -303,6 +319,9 @@
     "bottomEdgeFailsafe": "Bottom edge failsafe",
     "leftEdgeFailsafe": "Left edge failsafe",
     "clickLimitReached": "Click limit reached ({count})",
-    "timeLimitReached": "Time limit reached ({time})"
+    "timeLimitReached": "Time limit reached ({time})",
+    "processNotInWhitelist": "Process not in whitelist: {name}",
+    "processInBlacklist": "Process in blacklist: {name}",
+    "blockedByTaskSwitcher": "Blocked by task switcher"
   }
 }

@@ -138,12 +138,14 @@ const STATIC_STOP_REASON_KEYS: Record<string, TranslationKey> = {
   "Right edge failsafe": "stopReason.rightEdgeFailsafe",
   "Bottom edge failsafe": "stopReason.bottomEdgeFailsafe",
   "Left edge failsafe": "stopReason.leftEdgeFailsafe",
+  "Blocked by task switcher": "stopReason.blockedByTaskSwitcher",
 };
 
 export function translateStopReason(
-  stopReason: string,
+  stopReason: string | null | undefined,
   t: I18nContextValue["t"],
 ): string {
+  if (!stopReason) return "";
   const staticKey = STATIC_STOP_REASON_KEYS[stopReason];
   if (staticKey) return t(staticKey);
 

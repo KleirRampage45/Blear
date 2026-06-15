@@ -56,6 +56,8 @@
     "stopReasonAlertDescription": "Zeigt in der Titelleiste an, warum der Klicker gestoppt wurde.",
     "strictHotkeyModifiers": "Strenge Tastenkombinations-Modifikatoren",
     "strictHotkeyModifiersDescription": "Ein: Tastenkombination wird nur ausgelöst, wenn die Modifikatortasten exakt übereinstimmen. Aus: Zusätzlich gedrückte Modifikatoren werden ignoriert.",
+    "taskSwitcherStopEnabled": "Stoppen bei Alt+Tab / Win+Tab",
+    "taskSwitcherStopEnabledDescription": "Klicker automatisch stoppen, wenn die Aufgabenumschaltung oder Aufgabenansicht geöffnet ist.",
     "extendedClickSpeedLimit": "Erweitertes Klickgeschwindigkeitslimit",
     "extendedClickSpeedLimitDescription": "Erhöht das Klickgeschwindigkeitslimit auf {limit} CPS. Nicht empfohlen; die meisten Spiele registrieren nur ungefähr 60 CPS.",
     "extendedClickSpeedLimitDialogTitle": "⚠️ 1000-CPS-Limit aktivieren?",
@@ -180,7 +182,21 @@
     "pickCountdownUnavailable": "Die Positionserfassung beginnt in {seconds} Sekunden. Bewegen Sie Ihren Cursor an die Zielstelle und warten Sie, bis sie gespeichert ist.",
     "pickCountdownSingularUnavailable": "Die Positionserfassung beginnt in 1 Sekunde. Bewegen Sie Ihren Cursor an die Zielstelle und warten Sie, bis sie gespeichert ist.",
     "customStopZoneAddingIn": "Setzen in",
-    "customStopZoneCapturing": "Wird gesetzt..."
+    "customStopZoneCapturing": "Wird gesetzt...",
+    "processList": "Prozessliste",
+    "processListDescription": "Pausiert Klicks, wenn bestimmte Anwendungen im Fokus sind. Markierte Prozesse sind je nach Modus auf der Whitelist oder Blacklist.",
+    "processListUnavailable": "Aktivieren Sie die Prozessliste, um Anwendungsregeln zu verwalten.",
+    "whitelist": "Whitelist",
+    "blacklist": "Blacklist",
+    "whitelistEmptyWarning": "Whitelist-Modus ist aktiv, aber es wurden keine Anwendungen ausgewählt. Klicken wird für alle Anwendungen blockiert.",
+    "refresh": "Aktualisieren",
+    "refreshing": "Aktualisiere...",
+    "processListEmpty": "Keine Prozesse gefunden. Klicken Sie auf Aktualisieren.",
+    "noProcessNamed": "kein Prozess namens \"{query}\"",
+    "searchIn": "suchen in",
+    "applications": "Anwendungen",
+    "behaviorStop": "Stoppen",
+    "behaviorPause": "Pausieren"
   },
   "options": {
     "interval": { "s": "Sekunde", "m": "Minute", "h": "Stunde", "d": "Tag" },
@@ -241,6 +257,9 @@
     "bottomEdgeFailsafe": "Fail-Safe unterer Rand",
     "leftEdgeFailsafe": "Fail-Safe linker Rand",
     "clickLimitReached": "Klick-Limit erreicht ({count})",
-    "timeLimitReached": "Zeitlimit erreicht ({time})"
+    "timeLimitReached": "Zeitlimit erreicht ({time})",
+    "processNotInWhitelist": "Prozess nicht in Whitelist: {name}",
+    "processInBlacklist": "Prozess in Blacklist: {name}",
+    "blockedByTaskSwitcher": "Blockiert durch Aufgabenumschaltung"
   }
 }

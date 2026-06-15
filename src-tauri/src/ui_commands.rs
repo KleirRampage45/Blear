@@ -92,6 +92,7 @@ pub fn update_settings(
     drop(old);
 
     *state.settings.lock().unwrap() = settings.clone();
+    *state.warning.lock().unwrap() = None;
 
     if !was_initialized {
         state.settings_initialized.store(true, Ordering::SeqCst);
@@ -218,4 +219,9 @@ pub fn set_autostart_enabled(enabled: bool) -> Result<(), String> {
 pub fn quit_app(app: AppHandle) {
     crate::overlay::OVERLAY_THREAD_RUNNING.store(false, std::sync::atomic::Ordering::SeqCst);
     app.exit(0);
+}
+
+#[tauri::command]
+pub fn list_processes() -> Result<Vec<crate::engine::process::ProcessInfo>, String> {
+    Ok(crate::engine::process::list_running_processes())
 }

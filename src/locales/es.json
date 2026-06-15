@@ -56,6 +56,8 @@
     "stopReasonAlertDescription": "Muestra por qué se detuvo el clicker en la barra de título.",
     "strictHotkeyModifiers": "Modificadores estrictos del atajo",
     "strictHotkeyModifiersDescription": "Activado: el atajo solo se ejecuta cuando los modificadores coinciden exactamente. Desactivado: se ignoran los modificadores extra pulsados.",
+    "taskSwitcherStopEnabled": "Detener en Alt+Tab / Win+Tab",
+    "taskSwitcherStopEnabledDescription": "Detener automáticamente el clicker cuando el selector de tareas o la vista de tareas está abierta.",
     "extendedClickSpeedLimit": "Límite ampliado de velocidad de clic",
     "extendedClickSpeedLimitDescription": "Aumenta el límite de velocidad de clic a {limit} CPS. No se recomienda; la mayoría de los juegos solo registran alrededor de 60 CPS.",
     "extendedClickSpeedLimitDialogTitle": "⚠️ ¿Activar el límite de 1000 CPS?",
@@ -179,8 +181,22 @@
     "pickInProgressUnavailable": "La captura de posición ya está en curso. Espera a que termine la elección actual.",
     "pickCountdownUnavailable": "La captura de posición comienza en {seconds} segundos. Mueve el cursor al lugar objetivo y espera a que se guarde.",
     "pickCountdownSingularUnavailable": "La captura de posición comienza en 1 segundo. Mueve el cursor al lugar objetivo y espera a que se guarde.",
-    "customStopZoneAddingIn": "Configurando en",
-    "customStopZoneCapturing": "Configurando..."
+"customStopZoneAddingIn": "Configurando en",
+    "customStopZoneCapturing": "Configurando...",
+    "processList": "Lista de procesos",
+    "processListDescription": "Pausa los clics cuando ciertas aplicaciones están enfocadas. Los procesos marcados están en lista blanca o negra según el modo seleccionado.",
+    "processListUnavailable": "Activa la lista de procesos para gestionar las reglas de aplicaciones.",
+    "whitelist": "Lista blanca",
+    "blacklist": "Lista negra",
+    "whitelistEmptyWarning": "El modo lista blanca está activo sin aplicaciones seleccionadas. Los clics se bloquearán en todas las aplicaciones.",
+    "refresh": "Actualizar",
+    "refreshing": "Actualizando...",
+    "processListEmpty": "No se encontraron procesos. Haz clic en Actualizar.",
+    "noProcessNamed": "no hay procesos llamados \"{query}\"",
+    "searchIn": "buscar en",
+    "applications": "aplicaciones",
+    "behaviorStop": "Detener",
+    "behaviorPause": "Pausar"
   },
   "options": {
     "interval": { "s": "Segundo", "m": "Minuto", "h": "Hora", "d": "Día" },
@@ -241,6 +257,9 @@
     "bottomEdgeFailsafe": "Seguridad de borde inferior",
     "leftEdgeFailsafe": "Seguridad de borde izquierdo",
     "clickLimitReached": "Límite de clics alcanzado ({count})",
-    "timeLimitReached": "Límite de tiempo alcanzado ({time})"
+    "timeLimitReached": "Límite de tiempo alcanzado ({time})",
+    "processNotInWhitelist": "Proceso no en lista blanca: {name}",
+    "processInBlacklist": "Proceso en lista negra: {name}",
+    "blockedByTaskSwitcher": "Bloqueado por el selector de tareas"
   }
 }

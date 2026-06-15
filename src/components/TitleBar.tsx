@@ -25,11 +25,13 @@ interface Props {
   tab: Tab;
   setTab: (t: Tab) => void;
   running: boolean;
+  paused: boolean;
   stopReason?: string | null;
   stopKey: number;
   isAlwaysOnTop: boolean;
   onToggleAlwaysOnTop: () => Promise<void>;
   onRequestClose: () => Promise<void>;
+  warning?: string | null;
 }
 
 type NavTab = Exclude<Tab, "settings">;
@@ -127,11 +129,13 @@ export default function TitleBar({
   tab,
   setTab,
   running,
+  paused,
   stopReason,
   stopKey,
   isAlwaysOnTop,
   onToggleAlwaysOnTop,
   onRequestClose,
+  warning,
 }: Props) {
   const { t } = useTranslation();
 
@@ -191,8 +195,10 @@ export default function TitleBar({
       <div className="title-wrapper">
         <AnimatedTitle
           running={running}
+          paused={paused}
           stopReason={stopReason}
           stopKey={stopKey}
+          warning={warning}
         />
       </div>
 
@@ -267,9 +273,11 @@ export default function TitleBar({
 
 function AnimatedTitle({
   running,
+  paused,
   stopReason,
   stopKey,
-}: Pick<Props, "running" | "stopReason" | "stopKey">) {
+  warning,
+}: Pick<Props, "running" | "paused" | "stopReason" | "stopKey" | "warning">) {
   const [titleState, setTitleState] = useState(DEFAULT_TITLE_STATE);
   const frameIdsRef = useRef<number[]>([]);
   const timeoutIdsRef = useRef<number[]>([]);
@@ -295,9 +303,33 @@ function AnimatedTitle({
   useEffect(() => {
     clearScheduledWork();
 
-    if (running || !stopReason) {
+    if (warning) {
+      queueFrame(() => {
+        setTitleState({
+          text: `⚠ ${warning}`,
+          isReason: true,
+          flipClass: "",
+        });
+      });
+      return clearScheduledWork;
+    }
+
+    if (running && !paused && !stopReason) {
       queueFrame(() => {
         setTitleState(DEFAULT_TITLE_STATE);
+      });
+      return clearScheduledWork;
+    }
+
+    if (paused) {
+      queueFrame(() => {
+        setTitleState({
+          text: stopReason
+            ? `Paused: ${translateStopReason(stopReason, t)}`
+            : "Paused",
+          isReason: true,
+          flipClass: "",
+        });
       });
       return clearScheduledWork;
     }
@@ -340,7 +372,7 @@ function AnimatedTitle({
 
     return clearScheduledWork;
     // eslint-disable-next-line react-hooks/set-state-in-effect
-  }, [running, stopKey, t]);
+  }, [running, stopKey, t, warning, paused]);
 
   return (
     <span

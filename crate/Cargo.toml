@@ -1,0 +1,46 @@
+[package]
+name = "blear"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+# GUI
+eframe = { version = "0.31", features = ["default"] }
+egui = "0.31"
+
+# Cross-platform input simulation
+enigo = { version = "0.3", features = ["serde"] }
+
+# Serialization
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Cross-platform hotkeys
+global-hotkey = "0.3"
+
+# Cross-platform cursor position / screen info
+xcursor = { version = "0.2", optional = true }
+
+# Platform-specific
+[target.'cfg(target_os = "windows")'.dependencies]
+windows-sys = { version = "0.61.2", features = [
+    "Win32_Foundation",
+    "Win32_UI_Input_KeyboardAndMouse",
+    "Win32_UI_WindowsAndMessaging",
+    "Win32_System_Threading",
+    "Win32_Graphics_Gdi",
+] }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+x11rb = { version = "0.13", features = ["allow-unsafe-code"] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+core-graphics = "0.24"
+objc = "0.2"
+
+[profile.release]
+strip = true
+lto = "thin"
+codegen-units = 1
+opt-level = "z"

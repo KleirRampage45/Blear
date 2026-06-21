@@ -1,0 +1,150 @@
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
+use std::time::{Duration, Instant};
+
+use super::cycle::{execute_click_cycle, ClickCyclePlan};
+use super::failsafe::should_stop_for_failsafe;
+use super::rng::SmallRng;
+use super::{ClickerConfig, SequenceTarget};
+use crate::backend::ClickerBackend;
+use crate::settings::MouseButton;
+
+pub struct RunControl {
+    pub running: Arc<AtomicBool>,
+}
+
+impl RunControl {
+    pub fn is_active(&self) -> bool {
+        self.running.load(Ordering::SeqCst)
+    }
+}
+
+pub struct RunOutcome {
+    pub stop_reason: String,
+    pub click_count: u64,
+    pub elapsed_secs: f64,
+}
+
+pub fn start_clicker<B: ClickerBackend>(
+    config: ClickerConfig,
+    mut backend: B,
+    control: RunControl,
+) -> RunOutcome {
+    let mut rng = SmallRng::new();
+    let start_time = Instant::now();
+    let mut click_count: u64 = 0;
+    let mut stop_reason = "Stopped".to_string();
+
+    let is_keyboard = config.input_type == 1 && config.key_code > 0;
+
+    let cps = if config.interval_secs > 0.0 { 1.0 / config.interval_secs } else { 0.0 };
+
+    let effective_duty = if cps > 500.0 { config.duty_cycle.min(1.0) }
+        else if cps >= 200.0 { config.duty_cycle.min(30.0) }
+        else if cps >= 100.0 { config.duty_cycle.min(70.0) }
+        else if cps >= 50.0 { config.duty_cycle.min(98.0) }
+        else { config.duty_cycle };
+
+    while control.is_active() {
+        // Failsafe check
+        let pos = backend.cursor_position();
+        if let Some(reason) = should_stop_for_failsafe(&config, (pos.x, pos.y)) {
+            stop_reason = reason;
+            break;
+        }
+
+        // Click limit check
+        if config.click_limit > 0 && click_count >= config.click_limit as u64 {
+            stop_reason = format!("Click limit reached ({})", config.click_limit);
+            break;
+        }
+
+        // Time limit check
+        if config.time_limit_secs > 0.0 && start_time.elapsed().as_secs_f64() >= config.time_limit_secs {
+            stop_reason = format!("Time limit reached ({:.1}s)", config.time_limit_secs);
+            break;
+        }
+
+        // Calculate interval with variation
+        let base_interval_ms = config.interval_secs * 1000.0;
+        let variation = if config.variation > 0.0 {
+            base_interval_ms * (rng.next_f64() * 2.0 - 1.0) * (config.variation / 100.0)
+        } else { 0.0 };
+        let actual_interval_ms = (base_interval_ms + variation).max(0.5);
+        let cycle_ms = actual_interval_ms as u32;
+
+        // Calculate hold duration for duty cycle
+        let holds_ms = if effective_duty > 0.0 {
+            (cycle_ms as f64 * effective_duty / 100.0) as u32
+        } else { 0 };
+
+        if is_keyboard {
+            // Send key press
+            let plan = ClickCyclePlan::single(effective_duty as u32);
+            let use_shift = config.keyboard_uppercase;
+            let vk = config.key_code;
+
+            execute_click_cycle(
+                plan,
+                &mut || {
+                    if use_shift { backend.key_down(0x10); }
+                    backend.key_down(vk);
+                },
+                &mut || {
+                    backend.key_up(vk);
+                    if use_shift { backend.key_up(0x10); }
+                },
+                &mut |dur| {
+                    if !control.is_active() { return; }
+                    std::thread::sleep(dur);
+                },
+                &|| control.is_active(),
+            );
+        } else {
+            // Send mouse click
+            let plan = if config.double_click_enabled {
+                let gap_ms = config.double_click_gap_ms.min(cycle_ms.saturating_sub(1));
+                ClickCyclePlan::double(holds_ms, cycle_ms, gap_ms)
+            } else {
+                ClickCyclePlan::single(holds_ms)
+            };
+
+            execute_click_cycle(
+                plan,
+                &mut || backend.mouse_down(config.button.clone()),
+                &mut || backend.mouse_up(config.button.clone()),
+                &mut |dur| {
+                    if !control.is_active() { return; }
+                    std::thread::sleep(dur);
+                },
+                &|| control.is_active(),
+            );
+
+            click_count += if config.double_click_enabled { 2 } else { 1 };
+        }
+
+        // Sleep remaining interval time
+        if cycle_ms > holds_ms {
+            let sleep_ms = if config.double_click_enabled {
+                cycle_ms.saturating_sub(holds_ms.saturating_add(config.double_click_gap_ms))
+            } else {
+                cycle_ms.saturating_sub(holds_ms)
+            };
+            if sleep_ms > 0 {
+                let deadline = Instant::now() + Duration::from_millis(sleep_ms as u64);
+                while Instant::now() < deadline {
+                    if !control.is_active() {
+                        return RunOutcome { stop_reason: "Stopped".to_string(), click_count, elapsed_secs: start_time.elapsed().as_secs_f64() };
+                    }
+                    std::thread::sleep(Duration::from_millis(1));
+                }
+            }
+        }
+    }
+
+    RunOutcome {
+        stop_reason,
+        click_count,
+        elapsed_secs: start_time.elapsed().as_secs_f64(),
+    }
+}

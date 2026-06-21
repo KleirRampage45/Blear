@@ -20,10 +20,9 @@ impl LinuxBackend {
         let has_wayland = std::env::var("WAYLAND_DISPLAY").is_ok();
         let has_display = std::env::var("DISPLAY").is_ok();
 
-        // If wayland display is set and uinput available, use Wayland backend
         if has_wayland {
             return Self {
-                inner: BackendImpl::XTest(XTestBackend::new()),
+                inner: BackendImpl::Wayland(super::wayland::WaylandBackend::new()),
             };
         }
 

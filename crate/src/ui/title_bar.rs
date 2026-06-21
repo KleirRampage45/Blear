@@ -2,11 +2,10 @@ use crate::settings::Settings;
 use crate::Tab;
 use eframe::egui;
 
-pub fn show(ui: &mut egui::Ui, tab: &mut Tab, settings: &mut Settings) {
+pub fn show(ui: &mut egui::Ui, tab: &mut Tab, settings: &mut Settings, running: bool, stop_reason: Option<&str>) {
     let is_dark = settings.theme == crate::settings::Theme::Dark;
 
     ui.horizontal(|ui| {
-        // Settings gear button (left)
         let gear_btn = egui::Button::new("⚙")
             .min_size(egui::vec2(24.0, 24.0))
             .fill(if *tab == Tab::Settings {
@@ -20,7 +19,6 @@ pub fn show(ui: &mut egui::Ui, tab: &mut Tab, settings: &mut Settings) {
 
         ui.separator();
 
-        // Tab icons: Simple, Advanced, Zones
         let tabs = [
             (Tab::Simple, "🖱", "Simple", egui::Color32::from_rgb(34, 197, 94)),
             (Tab::Advanced, "⛰", "Advanced", egui::Color32::from_rgb(234, 179, 8)),
@@ -46,17 +44,12 @@ pub fn show(ui: &mut egui::Ui, tab: &mut Tab, settings: &mut Settings) {
             }
         }
 
-        // Spacer for right-side controls
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            // Close button
             if ui.add(egui::Button::new("✕").min_size(egui::vec2(24.0, 24.0))).clicked() {
                 std::process::exit(0);
             }
-            // Minimize button
             if ui.add(egui::Button::new("─").min_size(egui::vec2(24.0, 24.0))).clicked() {
-                // TODO: minimize window
             }
-            // Always on top toggle
             let aot_color = if settings.always_on_top {
                 egui::Color32::from_rgb(60, 60, 70)
             } else {
@@ -68,11 +61,16 @@ pub fn show(ui: &mut egui::Ui, tab: &mut Tab, settings: &mut Settings) {
         });
     });
 
-    // Title text
     ui.horizontal(|ui| {
-        ui.label(egui::RichText::new("Blear").size(14.0).strong());
-        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            // Could show stop reason here
-        });
+        let title = if running {
+            egui::RichText::new("Blear").size(14.0).strong().color(egui::Color32::from_rgb(34, 197, 94))
+        } else {
+            egui::RichText::new("Blear").size(14.0).strong()
+        };
+        ui.label(title);
+
+        if let Some(reason) = stop_reason {
+            ui.label(egui::RichText::new(reason).size(12.0).color(egui::Color32::GRAY));
+        }
     });
 }

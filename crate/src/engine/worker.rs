@@ -45,10 +45,15 @@ pub fn start_clicker<B: ClickerBackend>(
         else if cps >= 50.0 { config.duty_cycle.min(98.0) }
         else { config.duty_cycle };
 
+    let screen = {
+        let s = backend.virtual_screen();
+        (s.width, s.height)
+    };
+
     while control.is_active() {
         // Failsafe check
         let pos = backend.cursor_position();
-        if let Some(reason) = should_stop_for_failsafe(&config, (pos.x, pos.y)) {
+        if let Some(reason) = should_stop_for_failsafe(&config, (pos.x, pos.y), screen) {
             stop_reason = reason;
             break;
         }

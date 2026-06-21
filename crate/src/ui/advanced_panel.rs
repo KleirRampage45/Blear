@@ -156,11 +156,11 @@ fn limits_section(ui: &mut egui::Ui, settings: &mut Settings) {
         ui.horizontal(|ui| {
             let click_mode = !settings.time_limit_enabled;
             if ui.selectable_label(click_mode, "Clicks").clicked() {
-                settings.click_limit_enabled = settings.click_limit_enabled || true;
+                settings.click_limit_enabled = true;
                 settings.time_limit_enabled = false;
             }
             if ui.selectable_label(!click_mode, "Time").clicked() {
-                settings.time_limit_enabled = settings.time_limit_enabled || true;
+                settings.time_limit_enabled = true;
                 settings.click_limit_enabled = false;
             }
         });

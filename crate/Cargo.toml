@@ -16,11 +16,8 @@ enigo = { version = "0.3", features = ["serde"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 
-# Cross-platform hotkeys
-global-hotkey = "0.3"
-
-# Cross-platform cursor position / screen info
-xcursor = { version = "0.2", optional = true }
+# Cross-platform hotkeys (listening)
+rdev = "0.5"
 
 # HTTP client (updater)
 ureq = "3"

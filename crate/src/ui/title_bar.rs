@@ -3,6 +3,7 @@ use crate::Tab;
 use eframe::egui;
 
 pub fn show(ui: &mut egui::Ui, tab: &mut Tab, settings: &mut Settings, running: bool, stop_reason: Option<&str>, ctx: &egui::Context) {
+    let _lang = settings.language.clone();
     let is_dark = settings.theme == crate::settings::Theme::Dark;
 
     ui.horizontal(|ui| {

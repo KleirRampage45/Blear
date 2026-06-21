@@ -1,14 +1,16 @@
 use eframe::egui;
+use crate::i18n;
 use crate::settings::{ClickInterval, ClickMode, InputType, KeyboardKeyCase, MouseButton, RateInputMode, Settings};
 
 pub fn show(ui: &mut egui::Ui, settings: &mut Settings) {
+    let lang = settings.language.clone();
     ui.horizontal(|ui| {
         // Cadence box (left side)
-        cadence_box(ui, settings);
+        cadence_box(ui, settings, &lang);
 
         // Hotkey + Click Mode box
         ui.vertical(|ui| {
-            ui.label("Hotkey");
+            ui.label(i18n::t(&lang, "hotkey"));
             let mut hotkey = settings.hotkey.clone();
             ui.add_sized(egui::vec2(90.0, 20.0), egui::TextEdit::singleline(&mut hotkey));
             if hotkey != settings.hotkey {
@@ -16,7 +18,12 @@ pub fn show(ui: &mut egui::Ui, settings: &mut Settings) {
             }
 
             // Click mode: Toggle / Hold
-            let mode_options = [(ClickMode::Toggle, "Toggle"), (ClickMode::Hold, "Hold")];
+            let toggle_label = i18n::t(&lang, "toggle");
+            let hold_label = i18n::t(&lang, "hold");
+            let mode_options = [
+                (ClickMode::Toggle, toggle_label.as_str()),
+                (ClickMode::Hold, hold_label.as_str()),
+            ];
             if let Some(m) = crate::ui::widgets::seg_group(ui, &mode_options, &settings.mode) {
                 settings.mode = m;
             }
@@ -27,8 +34,12 @@ pub fn show(ui: &mut egui::Ui, settings: &mut Settings) {
 
     // Input type row
     ui.horizontal(|ui| {
-        // Input type: Mouse / Key
-        let input_options = [(InputType::Mouse, "Mouse"), (InputType::Keyboard, "Key")];
+        let mouse_label = i18n::t(&lang, "mouse");
+        let key_label = i18n::t(&lang, "key");
+        let input_options = [
+            (InputType::Mouse, mouse_label.as_str()),
+            (InputType::Keyboard, key_label.as_str()),
+        ];
         if let Some(it) = crate::ui::widgets::seg_group(ui, &input_options, &settings.input_type) {
             settings.input_type = it;
         }
@@ -37,11 +48,13 @@ pub fn show(ui: &mut egui::Ui, settings: &mut Settings) {
 
         match settings.input_type {
             InputType::Mouse => {
-                // Mouse button left/middle/right
+                let left_label = i18n::t(&lang, "left");
+                let middle_label = i18n::t(&lang, "middle");
+                let right_label = i18n::t(&lang, "right");
                 let btn_options = [
-                    (MouseButton::Left, "Left"),
-                    (MouseButton::Middle, "Middle"),
-                    (MouseButton::Right, "Right"),
+                    (MouseButton::Left, left_label.as_str()),
+                    (MouseButton::Middle, middle_label.as_str()),
+                    (MouseButton::Right, right_label.as_str()),
                 ];
                 if let Some(b) = crate::ui::widgets::seg_group(ui, &btn_options, &settings.mouse_button) {
                     settings.mouse_button = b;
@@ -53,7 +66,6 @@ pub fn show(ui: &mut egui::Ui, settings: &mut Settings) {
                 if key != settings.keyboard_key {
                     settings.keyboard_key = key;
                 }
-                // Case toggle
                 let case_label = if settings.keyboard_key_case == KeyboardKeyCase::Upper { "↑" } else { "↓" };
                 if ui.button(case_label).clicked() {
                     settings.keyboard_key_case = match settings.keyboard_key_case {
@@ -69,33 +81,36 @@ pub fn show(ui: &mut egui::Ui, settings: &mut Settings) {
 
     // Bottom row: Hold + Randomization
     ui.horizontal(|ui| {
-        // Duty Cycle (Hold %)
-        ui.label("Hold");
+        ui.label(i18n::t(&lang, "hold"));
         crate::ui::widgets::number_input(ui, &mut settings.duty_cycle, 0, 100, 50.0);
         ui.label("%");
 
         ui.separator();
 
-        // Speed Variation (Randomization %)
-        ui.label("Randomization");
+        ui.label(i18n::t(&lang, "randomization"));
         crate::ui::widgets::number_input(ui, &mut settings.speed_variation, 0, 200, 50.0);
         ui.label("%");
     });
 }
 
-fn cadence_box(ui: &mut egui::Ui, settings: &mut Settings) {
+fn cadence_box(ui: &mut egui::Ui, settings: &mut Settings, lang: &str) {
     ui.vertical(|ui| {
         if settings.rate_input_mode == RateInputMode::Rate {
             ui.horizontal(|ui| {
                 let max_speed = settings.max_click_speed();
                 crate::ui::widgets::number_input(ui, &mut settings.click_speed, 1, max_speed, 60.0);
-                ui.label("clicks per");
+                let per_sec = i18n::t(lang, "per_second");
+                ui.label(per_sec);
 
+                let sec = i18n::t(lang, "per_second");
+                let min = i18n::t(lang, "per_minute");
+                let hr = i18n::t(lang, "per_hour");
+                let day = i18n::t(lang, "per_day");
                 let interval_options = [
-                    (ClickInterval::Second, "Second"),
-                    (ClickInterval::Minute, "Minute"),
-                    (ClickInterval::Hour, "Hour"),
-                    (ClickInterval::Day, "Day"),
+                    (ClickInterval::Second, sec.as_str()),
+                    (ClickInterval::Minute, min.as_str()),
+                    (ClickInterval::Hour, hr.as_str()),
+                    (ClickInterval::Day, day.as_str()),
                 ];
                 if let Some(ci) = crate::ui::widgets::seg_group(ui, &interval_options, &settings.click_interval) {
                     settings.click_interval = ci;
@@ -111,12 +126,16 @@ fn cadence_box(ui: &mut egui::Ui, settings: &mut Settings) {
                 ui.label("s");
                 crate::ui::widgets::number_input(ui, &mut settings.duration_milliseconds, 0, 999, 40.0);
                 ui.label("ms");
-                ui.label("Per Click");
+                ui.label(i18n::t(lang, "per_click"));
             });
         }
 
-        // Rate/Delay toggle
-        let rate_options = [(RateInputMode::Rate, "Rate"), (RateInputMode::Duration, "Delay")];
+        let rate_label = i18n::t(lang, "rate");
+        let delay_label = i18n::t(lang, "delay");
+        let rate_options = [
+            (RateInputMode::Rate, rate_label.as_str()),
+            (RateInputMode::Duration, delay_label.as_str()),
+        ];
         if let Some(rm) = crate::ui::widgets::seg_group(ui, &rate_options, &settings.rate_input_mode) {
             settings.rate_input_mode = rm;
         }

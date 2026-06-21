@@ -1,4 +1,5 @@
 use eframe::egui;
+use crate::i18n;
 use crate::settings::Settings;
 use crate::ui::widgets;
 use crate::ui::zone_drawer;
@@ -9,8 +10,9 @@ pub fn show(
     settings: &mut Settings,
     zone_rx: &mut Option<mpsc::Receiver<zone_drawer::ZoneResult>>,
 ) {
+    let lang = settings.language.clone();
     // Corner Stop section
-    widgets::section_card(ui, "Corner Stop", true, "Stop when cursor enters a screen corner", |ui| {
+    widgets::section_card(ui, &i18n::t(&lang, "corner_stop"), true, "Stop when cursor enters a screen corner", |ui| {
         ui.checkbox(&mut settings.corner_stop_enabled, "Enabled");
 
         if settings.corner_stop_enabled {
@@ -35,7 +37,7 @@ pub fn show(
     ui.add_space(4.0);
 
     // Edge Stop section
-    widgets::section_card(ui, "Edge Stop", true, "Stop when cursor reaches screen edge", |ui| {
+    widgets::section_card(ui, &i18n::t(&lang, "edge_stop"), true, "Stop when cursor reaches screen edge", |ui| {
         ui.checkbox(&mut settings.edge_stop_enabled, "Enabled");
 
         if settings.edge_stop_enabled {
@@ -60,7 +62,7 @@ pub fn show(
     ui.add_space(4.0);
 
     // Custom Stop Zone section
-    widgets::section_card(ui, "Custom Stop Zone", true, "Define a rectangular zone to stop in", |ui| {
+    widgets::section_card(ui, &i18n::t(&lang, "custom_stop_zone"), true, "Define a rectangular zone to stop in", |ui| {
         ui.checkbox(&mut settings.custom_stop_zone_enabled, "Enabled");
 
         if settings.custom_stop_zone_enabled {

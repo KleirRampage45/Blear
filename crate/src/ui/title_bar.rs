@@ -49,6 +49,7 @@ pub fn show(ui: &mut egui::Ui, tab: &mut Tab, settings: &mut Settings, running: 
                 ctx.send_viewport_cmd(egui::viewport::ViewportCommand::Close);
             }
             if ui.add(egui::Button::new("─").min_size(egui::vec2(24.0, 24.0))).clicked() {
+                ctx.send_viewport_cmd(egui::viewport::ViewportCommand::Minimized(true));
             }
             let aot_color = if settings.always_on_top {
                 egui::Color32::from_rgb(60, 60, 70)

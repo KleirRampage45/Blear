@@ -71,9 +71,7 @@ pub fn show(ui: &mut egui::Ui, settings: &mut Settings) {
                 ui.label("H");
                 widgets::number_input(ui, &mut settings.custom_stop_zone_height, 1, 100000, 60.0);
             });
-            if ui.button("Draw Zone").clicked() {
-                // TODO: open overlay for drawing zone
-            }
+            ui.label("(enter coordinates manually — overlay coming soon)");
         }
     });
 }

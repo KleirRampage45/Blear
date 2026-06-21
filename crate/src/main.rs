@@ -46,8 +46,15 @@ pub struct BlearApp {
     stop_reason: Option<String>,
     hotkey_rx: mpsc::Receiver<HotkeyAction>,
     hotkey_tx: mpsc::Sender<HotkeyAction>,
+    outcome_tx: mpsc::Sender<ClickerOutcome>,
+    outcome_rx: mpsc::Receiver<ClickerOutcome>,
     hotkey_thread: Option<thread::JoinHandle<()>>,
     clicker_thread: Option<thread::JoinHandle<()>>,
+}
+
+struct ClickerOutcome {
+    stop_reason: String,
+    click_count: u64,
 }
 
 enum HotkeyAction {
@@ -67,6 +74,7 @@ pub enum Tab {
 impl BlearApp {
     fn new(_cc: &eframe::CreationContext<'_>) -> Self {
         let (tx, rx) = mpsc::channel();
+        let (outcome_tx, outcome_rx) = mpsc::channel();
         let settings = Settings::load().unwrap_or_default();
 
         Self {
@@ -77,6 +85,8 @@ impl BlearApp {
             stop_reason: None,
             hotkey_rx: rx,
             hotkey_tx: tx,
+            outcome_tx,
+            outcome_rx,
             hotkey_thread: None,
             clicker_thread: None,
         }
@@ -119,22 +129,22 @@ impl BlearApp {
 
         let running = self.running.clone();
         running.store(true, Ordering::SeqCst);
+        self.stop_reason = None;
 
         let config = engine::build_config(&self.settings);
         let backend = PlatformBackend::new();
         let control = engine::worker::RunControl {
             running: running.clone(),
         };
+        let outcome_tx = self.outcome_tx.clone();
 
         let handle = thread::spawn(move || {
             let outcome = engine::worker::start_clicker(config, backend, control);
             running.store(false, Ordering::SeqCst);
-            log::info!(
-                "Clicker stopped: {} ({} clicks in {:.1}s)",
-                outcome.stop_reason,
-                outcome.click_count,
-                outcome.elapsed_secs
-            );
+            let _ = outcome_tx.send(ClickerOutcome {
+                stop_reason: outcome.stop_reason,
+                click_count: outcome.click_count,
+            });
         });
 
         self.clicker_thread = Some(handle);
@@ -144,6 +154,13 @@ impl BlearApp {
         self.running.store(false, Ordering::SeqCst);
         if let Some(handle) = self.clicker_thread.take() {
             let _ = handle.join();
+        }
+    }
+
+    fn poll_clicker_outcome(&mut self) {
+        while let Ok(outcome) = self.outcome_rx.try_recv() {
+            self.stop_reason = Some(outcome.stop_reason);
+            self.click_count = outcome.click_count;
         }
     }
 
@@ -301,6 +318,7 @@ impl eframe::App for BlearApp {
         use ui::*;
 
         self.poll_hotkey_events();
+        self.poll_clicker_outcome();
 
         if self.hotkey_thread.is_none() && !self.settings.hotkey.is_empty() {
             self.start_hotkey_listener();

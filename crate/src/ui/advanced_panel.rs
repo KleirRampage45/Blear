@@ -194,21 +194,33 @@ fn sequence_section(ui: &mut egui::Ui, settings: &mut Settings) {
 
         if settings.sequence_enabled {
             ui.add_space(4.0);
-            if ui.button("Start Picking").clicked() {
-                // TODO: open overlay for picking sequence points
+            if ui.button("+ Add Point").clicked() {
+                settings.sequence_points.push(crate::settings::SequencePoint {
+                    id: uuid_v4(),
+                    x: 0,
+                    y: 0,
+                    clicks: 1,
+                });
             }
 
-            // Show existing sequence points
+            let count = settings.sequence_points.len();
             let mut remove_idx = None;
-            for (i, point) in settings.sequence_points.iter().enumerate() {
-                ui.horizontal(|ui| {
-                    ui.label(format!("#{}", i + 1));
-                    let mut p = point.clone();
-                    // These won't modify the vec directly yet — placeholder
-                    ui.label(format!("X:{} Y:{} C:{}", point.x, point.y, point.clicks));
-                    if ui.button("✕").clicked() {
-                        remove_idx = Some(i);
-                    }
+            for i in 0..count {
+                ui.group(|ui| {
+                    ui.horizontal(|ui| {
+                        ui.label(format!("#{}", i + 1));
+                        if ui.button("✕").clicked() {
+                            remove_idx = Some(i);
+                        }
+                    });
+                    ui.horizontal(|ui| {
+                        ui.label("X:");
+                        widgets::number_input_i32(ui, &mut settings.sequence_points[i].x, -100000, 100000, 50.0);
+                        ui.label("Y:");
+                        widgets::number_input_i32(ui, &mut settings.sequence_points[i].y, -100000, 100000, 50.0);
+                        ui.label("C:");
+                        widgets::number_input(ui, &mut settings.sequence_points[i].clicks, 1, 100000, 40.0);
+                    });
                 });
             }
             if let Some(idx) = remove_idx {
@@ -216,4 +228,10 @@ fn sequence_section(ui: &mut egui::Ui, settings: &mut Settings) {
             }
         }
     });
+
+fn uuid_v4() -> String {
+    use std::time::{SystemTime, UNIX_EPOCH};
+    let t = SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default();
+    format!("seq{:x}{:x}", t.as_secs(), t.subsec_nanos())
+}
 }

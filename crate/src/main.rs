@@ -75,7 +75,6 @@ struct ClickerOutcome {
 
 #[derive(Debug)]
 enum HotkeyAction {
-    Toggle,
     Press,
     Release,
 }
@@ -139,8 +138,55 @@ impl BlearApp {
                 std::env::var("DISPLAY").ok()
             );
 
+            // Track modifier state
+            let ctrl_down = Arc::new(AtomicBool::new(false));
+            let shift_down = Arc::new(AtomicBool::new(false));
+            let alt_down = Arc::new(AtomicBool::new(false));
+            let meta_down = Arc::new(AtomicBool::new(false));
+
+            let ctrl = ctrl_down.clone();
+            let shift = shift_down.clone();
+            let alt = alt_down.clone();
+            let meta = meta_down.clone();
+
             if let Err(e) = listen(move |event| {
-                if let Some(action) = match_hotkey(&event, &target) {
+                // Update modifier state
+                match &event.event_type {
+                    EventType::KeyPress(Key::ControlLeft) | EventType::KeyPress(Key::ControlRight) => {
+                        ctrl.store(true, Ordering::Relaxed);
+                    }
+                    EventType::KeyRelease(Key::ControlLeft) | EventType::KeyRelease(Key::ControlRight) => {
+                        ctrl.store(false, Ordering::Relaxed);
+                    }
+                    EventType::KeyPress(Key::ShiftLeft) | EventType::KeyPress(Key::ShiftRight) => {
+                        shift.store(true, Ordering::Relaxed);
+                    }
+                    EventType::KeyRelease(Key::ShiftLeft) | EventType::KeyRelease(Key::ShiftRight) => {
+                        shift.store(false, Ordering::Relaxed);
+                    }
+                    EventType::KeyPress(Key::Alt) | EventType::KeyPress(Key::AltGr) => {
+                        alt.store(true, Ordering::Relaxed);
+                    }
+                    EventType::KeyRelease(Key::Alt) | EventType::KeyRelease(Key::AltGr) => {
+                        alt.store(false, Ordering::Relaxed);
+                    }
+                    EventType::KeyPress(Key::MetaLeft) | EventType::KeyPress(Key::MetaRight) => {
+                        meta.store(true, Ordering::Relaxed);
+                    }
+                    EventType::KeyRelease(Key::MetaLeft) | EventType::KeyRelease(Key::MetaRight) => {
+                        meta.store(false, Ordering::Relaxed);
+                    }
+                    _ => {}
+                }
+
+                if let Some(action) = match_hotkey(
+                    &event,
+                    &target,
+                    ctrl.load(Ordering::Relaxed),
+                    shift.load(Ordering::Relaxed),
+                    alt.load(Ordering::Relaxed),
+                    meta.load(Ordering::Relaxed),
+                ) {
                     log::info!("Hotkey {:?} triggered", action);
                     let _ = tx.send(action);
                 }
@@ -250,9 +296,6 @@ impl BlearApp {
     fn poll_hotkey_events(&mut self) {
         while let Ok(action) = self.hotkey_rx.try_recv() {
             match action {
-                HotkeyAction::Toggle => {
-                    self.toggle_clicker();
-                }
                 HotkeyAction::Press => {
                     if self.settings.mode == settings::ClickMode::Hold {
                         self.start_clicker();
@@ -351,7 +394,22 @@ fn parse_key(s: &str) -> Option<Key> {
     })
 }
 
-fn match_hotkey(event: &Event, target: &ParsedHotkey) -> Option<HotkeyAction> {
+fn match_hotkey(
+    event: &Event,
+    target: &ParsedHotkey,
+    ctrl: bool,
+    shift: bool,
+    alt: bool,
+    meta: bool,
+) -> Option<HotkeyAction> {
+    // Check modifier state matches the target
+    if ctrl != target.ctrl || shift != target.shift || alt != target.alt || meta != target.meta {
+        // Allow firing if no modifiers required and this is the target key
+        if target.ctrl || target.shift || target.alt || target.meta {
+            return None;
+        }
+    }
+
     match &event.event_type {
         EventType::KeyPress(k) => {
             if *k == target.key {

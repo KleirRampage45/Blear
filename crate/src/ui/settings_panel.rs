@@ -182,6 +182,13 @@ fn startup_card(ui: &mut egui::Ui, settings: &mut Settings) {
                 }
             });
         });
+        let enabled = crate::autostart::is_autostart_enabled();
+        if enabled != settings.run_on_startup {
+            ui.label(egui::RichText::new(format!(
+                "(System shows autostart {})",
+                if enabled { "enabled" } else { "disabled" }
+            )).size(10.0).color(egui::Color32::GRAY));
+        }
     });
 }
 

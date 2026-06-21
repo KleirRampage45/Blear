@@ -1,4 +1,6 @@
+mod autostart;
 mod backend;
+mod cpu_sampler;
 mod engine;
 mod i18n;
 mod settings;
@@ -60,6 +62,9 @@ pub struct BlearApp {
     clicker_thread: Option<thread::JoinHandle<()>>,
     #[cfg(target_os = "linux")]
     _xwayland: Option<xwayland::XWaylandHandle>,
+    cpu_sampler: cpu_sampler::CpuSampler,
+    session_cpu_accum: f64,
+    session_cpu_samples: u32,
 }
 
 struct ClickerOutcome {
@@ -109,6 +114,9 @@ impl BlearApp {
             clicker_thread: None,
             #[cfg(target_os = "linux")]
             _xwayland: xwayland_handle,
+            cpu_sampler: cpu_sampler::CpuSampler::new(),
+            session_cpu_accum: 0.0,
+            session_cpu_samples: 0,
         }
     }
 
@@ -226,7 +234,16 @@ impl BlearApp {
         while let Ok(outcome) = self.outcome_rx.try_recv() {
             self.stop_reason = Some(outcome.stop_reason);
             self.click_count = outcome.click_count;
+            // Compute average CPU for the session
+            let avg_cpu = if self.session_cpu_samples > 0 {
+                self.session_cpu_accum / self.session_cpu_samples as f64
+            } else {
+                0.0
+            };
             self.settings.stats.record_session(outcome.click_count, outcome.elapsed_secs);
+            self.session_cpu_accum = 0.0;
+            self.session_cpu_samples = 0;
+            log::info!("Session avg CPU: {:.1}%", avg_cpu);
         }
     }
 
@@ -468,6 +485,11 @@ impl eframe::App for BlearApp {
             });
 
         if self.running.load(Ordering::Relaxed) {
+            let cpu = self.cpu_sampler.sample();
+            if cpu > 0.0 {
+                self.session_cpu_accum += cpu;
+                self.session_cpu_samples += 1;
+            }
             ctx.request_repaint();
         }
     }

@@ -165,7 +165,23 @@ fn behavior_card(ui: &mut egui::Ui, settings: &mut Settings) {
 fn startup_card(ui: &mut egui::Ui, settings: &mut Settings) {
     widgets::section_card(ui, "Startup", false, "", |ui| {
         row_bool(ui, "Minimize to Tray", &mut settings.minimize_to_tray);
-        ui.label("Run on Startup: configure in your OS (see docs)");
+        ui.horizontal(|ui| {
+            ui.label("Run on Startup");
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                let prev = settings.run_on_startup;
+                if ui.checkbox(&mut settings.run_on_startup, "").changed() {
+                    let result = if settings.run_on_startup {
+                        crate::autostart::enable_autostart()
+                    } else {
+                        crate::autostart::disable_autostart()
+                    };
+                    if let Err(e) = result {
+                        log::error!("Autostart: {}", e);
+                        settings.run_on_startup = prev;
+                    }
+                }
+            });
+        });
     });
 }
 

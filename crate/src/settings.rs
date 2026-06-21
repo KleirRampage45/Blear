@@ -227,6 +227,7 @@ pub struct Settings {
     pub show_stop_overlay: bool,
     pub show_stop_reason: bool,
     pub minimize_to_tray: bool,
+    pub run_on_startup: bool,
     pub last_panel: String,
 
     // Appearance
@@ -292,6 +293,7 @@ impl Default for Settings {
             show_stop_overlay: true,
             show_stop_reason: true,
             minimize_to_tray: false,
+            run_on_startup: false,
             last_panel: "simple".to_string(),
             theme: Theme::Dark,
             advanced_layout: AdvancedLayout::Wide,

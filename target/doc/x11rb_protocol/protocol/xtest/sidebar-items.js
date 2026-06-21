@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":["COMPARE_CURSOR_REQUEST","FAKE_INPUT_REQUEST","GET_VERSION_REQUEST","GRAB_CONTROL_REQUEST","X11_EXTENSION_NAME","X11_XML_VERSION"],"struct":["CompareCursorReply","CompareCursorRequest","Cursor","FakeInputRequest","GetVersionReply","GetVersionRequest","GrabControlRequest"]};

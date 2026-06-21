@@ -1,46 +1,52 @@
-# Building From Source
-
-This project is Windows-first. The maintained desktop build path uses the Rust `x86_64-pc-windows-msvc` toolchain plus Node.js.
+# Building Blear
 
 ## Prerequisites
 
-- Node.js 20 or newer
-- Rust via `rustup`
-- Microsoft C++ Build Tools / Visual Studio Build Tools
+### Linux
+```bash
+# Arch
+sudo pacman -S rustup base-devel cmake
 
-## Setup
+# Debian/Ubuntu
+sudo apt install build-essential cmake libx11-dev libxtst-dev libxrandr-dev
 
-```powershell
-git clone https://github.com/Blur009/Blur-AutoClicker.git
-cd Blur-AutoClicker
-npm install
-rustup default stable-x86_64-pc-windows-msvc
+# Fedora
+sudo dnf groupinstall "Development Tools"
+sudo dnf install cmake libX11-devel libXtst-devel libXrandr-devel
 ```
 
-## Run in development
-
-```powershell
-npm run dev
+### macOS
+```bash
+xcode-select --install
 ```
 
-## Build a release bundle
-
+### Windows
 ```powershell
-npm run build
+# Install Rust from https://rustup.rs
+# Install Visual Studio Build Tools with "Desktop development with C++"
 ```
 
-The built Windows installer is written to `src-tauri/target/release/bundle/nsis/`.
+## Build
 
-## Validation
-
-```powershell
-npm run lint
-npm run frontend:build
-cargo fmt --manifest-path src-tauri/Cargo.toml --check
-cargo check --manifest-path src-tauri/Cargo.toml --locked
-cargo test --manifest-path src-tauri/Cargo.toml --locked
+```bash
+cd Blear
+cargo build --release
 ```
 
-## Contributing
+Binary will be at `target/release/blear`.
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for pull request guidelines and workflow.
+## Linux Test
+
+```bash
+# X11 required. Run with:
+cargo run
+
+# On Wayland, use XWayland:
+QT_QPA_PLATFORM=xcb cargo run
+# or simply:
+DISPLAY=:0 cargo run
+```
+
+## Cross-compilation
+
+Coming soon.

@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"mod":["unsafe_code"],"struct":["CSlice"],"type":["RawFdContainer"]};

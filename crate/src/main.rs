@@ -2,6 +2,7 @@ mod backend;
 mod engine;
 mod settings;
 mod ui;
+mod updater;
 
 use eframe::egui;
 use settings::Settings;
@@ -10,10 +11,10 @@ use std::sync::Arc;
 
 #[cfg(target_os = "windows")]
 type PlatformBackend = backend::windows::WindowsBackend;
-#[cfg(target_os = "linux")]
-type PlatformBackend = backend::linux::LinuxBackend;
 #[cfg(target_os = "macos")]
 type PlatformBackend = backend::macos::MacosBackend;
+#[cfg(target_os = "linux")]
+type PlatformBackend = backend::linux::LinuxBackend;
 
 fn main() -> Result<(), eframe::Error> {
     let mut options = eframe::NativeOptions::default();

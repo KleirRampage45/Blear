@@ -22,6 +22,15 @@ global-hotkey = "0.3"
 # Cross-platform cursor position / screen info
 xcursor = { version = "0.2", optional = true }
 
+# HTTP client (updater)
+ureq = "3"
+# Version comparison (updater)
+semver = "1"
+# Logging
+log = "0.4"
+# libc (uinput ioctl for Wayland backend)
+libc = "0.2"
+
 # Platform-specific
 [target.'cfg(target_os = "windows")'.dependencies]
 windows-sys = { version = "0.61.2", features = [

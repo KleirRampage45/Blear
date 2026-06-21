@@ -1,9 +1,0 @@
-(function() {
-    const implementors = Object.fromEntries([["rustix",[["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.96.0/core/convert/trait.AsRef.html\" title=\"trait core::convert::AsRef\">AsRef</a>&lt;<a class=\"primitive\" href=\"https://doc.rust-lang.org/1.96.0/std/primitive.str.html\">str</a>&gt; for <a class=\"struct\" href=\"rustix/net/netdevice/struct.InlinedName.html\" title=\"struct rustix::net::netdevice::InlinedName\">InlinedName</a>",0],["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.96.0/core/convert/trait.AsRef.html\" title=\"trait core::convert::AsRef\">AsRef</a>&lt;<a class=\"struct\" href=\"https://doc.rust-lang.org/1.96.0/std/path/struct.Path.html\" title=\"struct std::path::Path\">Path</a>&gt; for <a class=\"struct\" href=\"rustix/path/struct.DecInt.html\" title=\"struct rustix::path::DecInt\">DecInt</a>",0],["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.96.0/core/convert/trait.AsRef.html\" title=\"trait core::convert::AsRef\">AsRef</a>&lt;[<a class=\"primitive\" href=\"https://doc.rust-lang.org/1.96.0/std/primitive.u8.html\">u8</a>]&gt; for <a class=\"struct\" href=\"rustix/net/netdevice/struct.InlinedName.html\" title=\"struct rustix::net::netdevice::InlinedName\">InlinedName</a>",0]]],["x11rb",[["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.96.0/core/convert/trait.AsRef.html\" title=\"trait core::convert::AsRef\">AsRef</a>&lt;[<a class=\"primitive\" href=\"https://doc.rust-lang.org/1.96.0/std/primitive.u8.html\">u8</a>]&gt; for <a class=\"struct\" href=\"x11rb/utils/struct.CSlice.html\" title=\"struct x11rb::utils::CSlice\">CSlice</a>",0]]]]);
-    if (window.register_implementors) {
-        window.register_implementors(implementors);
-    } else {
-        window.pending_implementors = implementors;
-    }
-})()
-//{"start":59,"fragment_lengths":[1209,377]}

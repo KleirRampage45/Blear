@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"enum":["DiscardMode","ReplyOrError","RequestKind"],"fn":["compute_length_field"],"mod":["impls"],"trait":["Connection","RequestConnection"],"type":["BufWithFds","EventAndSeqNumber","RawEventAndSeqNumber","SequenceNumber"]};

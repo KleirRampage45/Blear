@@ -59,11 +59,13 @@ pub trait ClickerBackend: Send + 'static {
     fn double_click_time_ms(&self) -> u32;
 }
 
-#[cfg(target_os = "windows")]
-pub mod windows;
-
 #[cfg(target_os = "linux")]
 pub mod linux;
-
+#[cfg(target_os = "linux")]
+pub mod linux_xtest;
+#[cfg(target_os = "linux")]
+pub mod wayland;
 #[cfg(target_os = "macos")]
 pub mod macos;
+#[cfg(target_os = "windows")]
+pub mod windows;

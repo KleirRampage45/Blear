@@ -1,2 +1,0 @@
-window.ALL_CRATES = ["as_raw_xcb_connection","bitflags","cfg_if","gethostname","libc","libloading","linux_raw_sys","once_cell","rustix","serde_core","x11rb","x11rb_protocol"];
-//{"start":21,"fragment_lengths":[23,11,9,14,7,13,16,12,9,13,8,17]}

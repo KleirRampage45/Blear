@@ -348,26 +348,24 @@ impl Settings {
         serde_json::from_str(&data).ok()
     }
 
-    pub fn save(&self) {
-        let path = match Self::config_path() {
-            Some(p) => p,
-            None => return,
-        };
+    pub fn save(&self) -> Result<(), String> {
+        let path = Self::config_path()
+            .ok_or_else(|| "Could not determine config directory".to_string())?;
         if let Some(dir) = path.parent() {
-            let _ = std::fs::create_dir_all(dir);
+            std::fs::create_dir_all(dir)
+                .map_err(|e| format!("Failed to create config dir: {}", e))?;
         }
-        let data = match serde_json::to_string_pretty(self) {
-            Ok(d) => d,
-            Err(_) => return,
-        };
+        let data = serde_json::to_string_pretty(self)
+            .map_err(|e| format!("Failed to serialize settings: {}", e))?;
         let dir = path.parent().unwrap_or(std::path::Path::new("."));
-        let mut tmp = match tempfile::NamedTempFile::new_in(dir) {
-            Ok(t) => t,
-            Err(_) => return,
-        };
+        let mut tmp = tempfile::NamedTempFile::new_in(dir)
+            .map_err(|e| format!("Failed to create temp file: {}", e))?;
         use std::io::Write;
-        let _ = tmp.write_all(data.as_bytes());
-        let _ = tmp.persist(&path);
+        tmp.write_all(data.as_bytes())
+            .map_err(|e| format!("Failed to write settings: {}", e))?;
+        tmp.persist(&path)
+            .map_err(|e| format!("Failed to save settings: {}", e))?;
+        Ok(())
     }
 }
 

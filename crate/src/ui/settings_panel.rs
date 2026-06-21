@@ -1,4 +1,5 @@
 use eframe::egui;
+use crate::i18n;
 use crate::settings::*;
 use crate::ui::widgets;
 use crate::updater;
@@ -83,30 +84,31 @@ fn about_card(ui: &mut egui::Ui, _settings: &mut Settings) {
 }
 
 fn stats_card(ui: &mut egui::Ui, settings: &mut Settings) {
-    widgets::section_card(ui, "Usage Stats", false, "", |ui| {
+    let lang = settings.language.clone();
+    widgets::section_card(ui, &i18n::t(&lang, "usage_stats"), false, "", |ui| {
         let s = &settings.stats;
 
         ui.horizontal(|ui| {
             ui.vertical(|ui| {
-                ui.label(egui::RichText::new("Total Clicks").size(10.0).color(egui::Color32::GRAY));
+                ui.label(egui::RichText::new(i18n::t(&lang, "total_clicks")).size(10.0).color(egui::Color32::GRAY));
                 ui.label(egui::RichText::new(format!("{}", s.total_clicks)).size(16.0).strong());
             });
             ui.vertical(|ui| {
-                ui.label(egui::RichText::new("Total Time").size(10.0).color(egui::Color32::GRAY));
+                ui.label(egui::RichText::new(i18n::t(&lang, "total_time")).size(10.0).color(egui::Color32::GRAY));
                 ui.label(egui::RichText::new(format_duration(s.total_seconds)).size(16.0).strong());
             });
             ui.vertical(|ui| {
-                ui.label(egui::RichText::new("Sessions").size(10.0).color(egui::Color32::GRAY));
+                ui.label(egui::RichText::new(i18n::t(&lang, "sessions")).size(10.0).color(egui::Color32::GRAY));
                 ui.label(egui::RichText::new(format!("{}", s.sessions)).size(16.0).strong());
             });
             ui.vertical(|ui| {
-                ui.label(egui::RichText::new("Avg CPS").size(10.0).color(egui::Color32::GRAY));
+                ui.label(egui::RichText::new(i18n::t(&lang, "avg_cps")).size(10.0).color(egui::Color32::GRAY));
                 ui.label(egui::RichText::new(format!("{:.1}", s.average_cpu())).size(16.0).strong());
             });
         });
 
         if s.total_clicks == 0 {
-            ui.label("No runs yet");
+            ui.label(i18n::t(&lang, "no_runs_yet"));
         } else {
             ui.label(format!(
                 "Last session: {} clicks in {}",
@@ -116,7 +118,7 @@ fn stats_card(ui: &mut egui::Ui, settings: &mut Settings) {
         }
 
         ui.add_space(4.0);
-        if ui.button("Clear Stats").clicked() {
+        if ui.button(i18n::t(&lang, "clear_stats")).clicked() {
             settings.stats = UsageStats::default();
         }
     });
@@ -292,10 +294,18 @@ fn snapshot_settings(s: &Settings) -> PresetSnapshot {
 }
 
 fn apply_preset(s: &mut Settings, snapshot: &PresetSnapshot) {
+    // Preserve stats, presets list, and active_preset_id across preset apply
+    let saved_stats = s.stats.clone();
+    let saved_presets = s.presets.clone();
+    let saved_active = s.active_preset_id.clone();
+
     match serde_json::Value::Object(snapshot.iter().map(|(k, v)| (k.clone(), v.clone())).collect()) {
         v => {
             if let Ok(new_s) = serde_json::from_value::<Settings>(v) {
                 *s = new_s;
+                s.stats = saved_stats;
+                s.presets = saved_presets;
+                s.active_preset_id = saved_active;
             }
         }
     }

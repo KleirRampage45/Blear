@@ -1,8 +1,10 @@
 mod backend;
 mod engine;
+mod i18n;
 mod settings;
 mod ui;
 mod updater;
+mod xwayland;
 
 use eframe::egui;
 use egui::viewport::ViewportCommand;
@@ -50,6 +52,8 @@ pub struct BlearApp {
     outcome_rx: mpsc::Receiver<ClickerOutcome>,
     hotkey_thread: Option<thread::JoinHandle<()>>,
     clicker_thread: Option<thread::JoinHandle<()>>,
+    #[cfg(target_os = "linux")]
+    _xwayland: Option<xwayland::XWaylandHandle>,
 }
 
 struct ClickerOutcome {
@@ -78,6 +82,10 @@ impl BlearApp {
         let (outcome_tx, outcome_rx) = mpsc::channel();
         let settings = Settings::load().unwrap_or_default();
 
+        // Auto-spawn XWayland on Wayland sessions so global hotkeys work
+        #[cfg(target_os = "linux")]
+        let xwayland_handle = xwayland::ensure_xwayland();
+
         Self {
             settings,
             tab: Tab::Simple,
@@ -90,6 +98,8 @@ impl BlearApp {
             outcome_rx,
             hotkey_thread: None,
             clicker_thread: None,
+            #[cfg(target_os = "linux")]
+            _xwayland: xwayland_handle,
         }
     }
 
@@ -407,6 +417,8 @@ impl eframe::App for BlearApp {
     }
 
     fn on_exit(&mut self, _gl: Option<&eframe::glow::Context>) {
-        self.settings.save();
+        if let Err(e) = self.settings.save() {
+            log::error!("Failed to save settings: {}", e);
+        }
     }
 }

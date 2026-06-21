@@ -21,7 +21,7 @@ impl ClickerBackend for MacosBackend {
     }
 
     fn mouse_click(&mut self, button: MouseButton) {
-        self.mouse_down(button);
+        self.mouse_down(button.clone());
         self.mouse_up(button);
     }
 

@@ -16,15 +16,12 @@ type PlatformBackend = backend::linux::LinuxBackend;
 type PlatformBackend = backend::macos::MacosBackend;
 
 fn main() -> Result<(), eframe::Error> {
-    let options = eframe::NativeOptions {
-        viewport: egui::ViewportBuilder::default()
-            .with_inner_size([650.0, 210.0])
-            .with_min_inner_size([360.0, 220.0])
-            .with_decorations(false) // custom title bar
-            .with_transparent(true)
-            .with_always_on_top()
-        ..Default::default()
-    };
+    let mut options = eframe::NativeOptions::default();
+    options.viewport = egui::ViewportBuilder::default()
+        .with_inner_size([650.0, 210.0])
+        .with_min_inner_size([360.0, 220.0])
+        .with_decorations(false)
+        .with_transparent(true);
 
     eframe::run_native(
         "Blear",

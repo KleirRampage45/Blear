@@ -87,7 +87,8 @@ fn cadence_box(ui: &mut egui::Ui, settings: &mut Settings) {
     ui.vertical(|ui| {
         if settings.rate_input_mode == RateInputMode::Rate {
             ui.horizontal(|ui| {
-                crate::ui::widgets::number_input(ui, &mut settings.click_speed, 1, settings.max_click_speed(), 60.0);
+                let max_speed = settings.max_click_speed();
+                crate::ui::widgets::number_input(ui, &mut settings.click_speed, 1, max_speed, 60.0);
                 ui.label("clicks per");
 
                 let interval_options = [

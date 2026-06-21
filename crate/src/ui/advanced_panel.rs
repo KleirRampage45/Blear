@@ -40,8 +40,9 @@ fn cadence_section(ui: &mut egui::Ui, settings: &mut Settings) {
     widgets::section_card(ui, "Cadence", true, "Click speed settings", |ui| {
         ui.horizontal(|ui| {
             // Cadence input
+            let max_speed = settings.max_click_speed();
             if settings.rate_input_mode == RateInputMode::Rate {
-                widgets::number_input(ui, &mut settings.click_speed, 1, settings.max_click_speed(), 50.0);
+                widgets::number_input(ui, &mut settings.click_speed, 1, max_speed, 50.0);
                 ui.label("clicks /");
                 let interval_options = [
                     (ClickInterval::Second, "s"),

@@ -58,7 +58,7 @@ pub fn dropdown(ui: &mut egui::Ui, current: &str, options: &[(&str, &str)], widt
         .width(width)
         .show_ui(ui, |ui| {
             for (value, label) in options {
-                if ui.selectable_label(*current == *value, *label).clicked() {
+                if ui.selectable_label(current == *value, *label).clicked() {
                     result = Some(value.to_string());
                 }
             }
@@ -69,15 +69,11 @@ pub fn dropdown(ui: &mut egui::Ui, current: &str, options: &[(&str, &str)], widt
 /// Section card with title (like the original "adv-basic-card")
 pub fn section_card(ui: &mut egui::Ui, title: &str, has_info: bool, info_text: &str, add_contents: impl FnOnce(&mut egui::Ui)) {
     egui::Frame::group(ui.style())
-        .inner_margin(egui::Margin::symmetric(8.0_f32, 6.0_f32))
+        .inner_margin(egui::Margin::symmetric(8, 6))
         .show(ui, |ui| {
             ui.horizontal(|ui| {
                 if has_info {
-                    // Info icon (hover tooltip)
                     ui.label(egui::RichText::new("ⓘ").size(14.0));
-                    if ui.ui_contains_pointer() {
-                        egui::show_tooltip_text(ui.ctx(), egui::Id::new(info_text), info_text);
-                    }
                 }
                 ui.label(egui::RichText::new(title).strong().size(13.0));
             });

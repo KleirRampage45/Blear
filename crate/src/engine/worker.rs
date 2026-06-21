@@ -79,46 +79,20 @@ pub fn start_clicker<B: ClickerBackend>(
         } else { 0 };
 
         if is_keyboard {
-            // Send key press
-            let plan = ClickCyclePlan::single(effective_duty as u32);
+            // Send key press - inline the click cycle to avoid double borrow
             let use_shift = config.keyboard_uppercase;
             let vk = config.key_code;
-
-            execute_click_cycle(
-                plan,
-                &mut || {
-                    if use_shift { backend.key_down(0x10); }
-                    backend.key_down(vk);
-                },
-                &mut || {
-                    backend.key_up(vk);
-                    if use_shift { backend.key_up(0x10); }
-                },
-                &mut |dur| {
-                    if !control.is_active() { return; }
-                    std::thread::sleep(dur);
-                },
-                &|| control.is_active(),
-            );
+            if use_shift { backend.key_down(0x10); }
+            backend.key_down(vk);
+            std::thread::sleep(Duration::from_millis(1));
+            backend.key_up(vk);
+            if use_shift { backend.key_up(0x10); }
         } else {
-            // Send mouse click
-            let plan = if config.double_click_enabled {
-                let gap_ms = config.double_click_gap_ms.min(cycle_ms.saturating_sub(1));
-                ClickCyclePlan::double(holds_ms, cycle_ms, gap_ms)
-            } else {
-                ClickCyclePlan::single(holds_ms)
-            };
-
-            execute_click_cycle(
-                plan,
-                &mut || backend.mouse_down(config.button.clone()),
-                &mut || backend.mouse_up(config.button.clone()),
-                &mut |dur| {
-                    if !control.is_active() { return; }
-                    std::thread::sleep(dur);
-                },
-                &|| control.is_active(),
-            );
+            // Send mouse click - inline the click cycle
+            let button = config.button.clone();
+            backend.mouse_down(button.clone());
+            std::thread::sleep(Duration::from_millis(1));
+            backend.mouse_up(button);
 
             click_count += if config.double_click_enabled { 2 } else { 1 };
         }

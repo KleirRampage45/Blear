@@ -55,6 +55,7 @@ pub struct BlearApp {
     outcome_tx: mpsc::Sender<ClickerOutcome>,
     outcome_rx: mpsc::Receiver<ClickerOutcome>,
     pick_rx: Option<mpsc::Receiver<crate::ui::sequence_picker::PickResult>>,
+    zone_rx: Option<mpsc::Receiver<crate::ui::zone_drawer::ZoneResult>>,
     hotkey_thread: Option<thread::JoinHandle<()>>,
     clicker_thread: Option<thread::JoinHandle<()>>,
     #[cfg(target_os = "linux")]
@@ -103,6 +104,7 @@ impl BlearApp {
             outcome_tx,
             outcome_rx,
             pick_rx: None,
+            zone_rx: None,
             hotkey_thread: None,
             clicker_thread: None,
             #[cfg(target_os = "linux")]
@@ -197,6 +199,24 @@ impl BlearApp {
                     crate::ui::sequence_picker::PickResult::Cancelled => {
                         // Keep existing points
                     }
+                }
+            }
+        }
+    }
+
+    fn poll_zone_result(&mut self) {
+        if let Some(rx) = self.zone_rx.as_ref() {
+            if let Ok(result) = rx.try_recv() {
+                self.zone_rx = None;
+                match result {
+                    crate::ui::zone_drawer::ZoneResult::Done(x, y, w, h) => {
+                        self.settings.custom_stop_zone_x = x;
+                        self.settings.custom_stop_zone_y = y;
+                        self.settings.custom_stop_zone_width = w.max(1) as u32;
+                        self.settings.custom_stop_zone_height = h.max(1) as u32;
+                        self.settings.custom_stop_zone_enabled = true;
+                    }
+                    crate::ui::zone_drawer::ZoneResult::Cancelled => {}
                 }
             }
         }
@@ -367,6 +387,7 @@ impl eframe::App for BlearApp {
         self.poll_hotkey_events();
         self.poll_clicker_outcome();
         self.poll_pick_result();
+        self.poll_zone_result();
 
         if self.hotkey_thread.is_none() && !self.settings.hotkey.is_empty() {
             self.start_hotkey_listener();
@@ -435,7 +456,7 @@ impl eframe::App for BlearApp {
                                 advanced_panel::show(ui, &mut self.settings, &mut self.pick_rx);
                             }
                             Tab::Zones => {
-                                zones_panel::show(ui, &mut self.settings);
+                                zones_panel::show(ui, &mut self.settings, &mut self.zone_rx);
                             }
                             Tab::Settings => {
                                 settings_panel::show(ui, &mut self.settings);

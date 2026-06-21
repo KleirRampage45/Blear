@@ -1,8 +1,14 @@
 use eframe::egui;
 use crate::settings::Settings;
 use crate::ui::widgets;
+use crate::ui::zone_drawer;
+use std::sync::mpsc;
 
-pub fn show(ui: &mut egui::Ui, settings: &mut Settings) {
+pub fn show(
+    ui: &mut egui::Ui,
+    settings: &mut Settings,
+    zone_rx: &mut Option<mpsc::Receiver<zone_drawer::ZoneResult>>,
+) {
     // Corner Stop section
     widgets::section_card(ui, "Corner Stop", true, "Stop when cursor enters a screen corner", |ui| {
         ui.checkbox(&mut settings.corner_stop_enabled, "Enabled");
@@ -71,7 +77,13 @@ pub fn show(ui: &mut egui::Ui, settings: &mut Settings) {
                 ui.label("H");
                 widgets::number_input(ui, &mut settings.custom_stop_zone_height, 1, 100000, 60.0);
             });
-            ui.label("(enter coordinates manually — overlay coming soon)");
+            if ui.button("Draw Zone").clicked() && zone_rx.is_none() {
+                let ctx = ui.ctx().clone();
+                *zone_rx = Some(zone_drawer::start(ctx));
+            }
+            if zone_rx.is_some() {
+                ui.label(egui::RichText::new("Drawing active — drag on the overlay to define a zone").color(egui::Color32::YELLOW));
+            }
         }
     });
 }

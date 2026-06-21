@@ -2,6 +2,7 @@ mod autostart;
 mod backend;
 mod cpu_sampler;
 mod engine;
+mod evdev_hotkey;
 mod i18n;
 mod settings;
 mod ui;
@@ -93,9 +94,10 @@ impl BlearApp {
         let (outcome_tx, outcome_rx) = mpsc::channel();
         let settings = Settings::load().unwrap_or_default();
 
-        // Auto-spawn XWayland on Wayland sessions so global hotkeys work
+        // XWayland is no longer needed since evdev handles hotkeys natively.
+        // Kept as field for potential future use, but we don't spawn it anymore.
         #[cfg(target_os = "linux")]
-        let xwayland_handle = xwayland::ensure_xwayland();
+        let xwayland_handle: Option<xwayland::XWaylandHandle> = None;
 
         Self {
             settings,
@@ -132,11 +134,7 @@ impl BlearApp {
                 }
             };
 
-            log::info!(
-                "Starting hotkey listener for {:?} (DISPLAY={:?})",
-                target,
-                std::env::var("DISPLAY").ok()
-            );
+            log::info!("Starting hotkey listener for {:?}", target);
 
             // Track modifier state
             let ctrl_down = Arc::new(AtomicBool::new(false));
@@ -144,55 +142,72 @@ impl BlearApp {
             let alt_down = Arc::new(AtomicBool::new(false));
             let meta_down = Arc::new(AtomicBool::new(false));
 
-            let ctrl = ctrl_down.clone();
-            let shift = shift_down.clone();
-            let alt = alt_down.clone();
-            let meta = meta_down.clone();
+            let ctrl_r = ctrl_down.clone();
+            let shift_r = shift_down.clone();
+            let alt_r = alt_down.clone();
+            let meta_r = meta_down.clone();
+            let target_r = target;
+            let tx_r = tx.clone();
 
-            if let Err(e) = listen(move |event| {
-                // Update modifier state
-                match &event.event_type {
-                    EventType::KeyPress(Key::ControlLeft) | EventType::KeyPress(Key::ControlRight) => {
-                        ctrl.store(true, Ordering::Relaxed);
+            // Try evdev first (works on Wayland, captures raw kernel input)
+            #[cfg(target_os = "linux")]
+            {
+                let (evdev_tx, evdev_rx) = mpsc::channel::<(u16, bool)>();
+                let evdev_handle = thread::spawn(move || {
+                    if let Err(e) = evdev_hotkey::listen(evdev_tx) {
+                        log::warn!("evdev listener failed: {}", e);
                     }
-                    EventType::KeyRelease(Key::ControlLeft) | EventType::KeyRelease(Key::ControlRight) => {
-                        ctrl.store(false, Ordering::Relaxed);
+                });
+
+                let mut evdev_failed = false;
+                loop {
+                    match evdev_rx.recv_timeout(std::time::Duration::from_millis(100)) {
+                        Ok((keycode, pressed)) => {
+                            // Convert evdev keycode to rdev::Key
+                            if let Some(key) = evdev_to_rdev_key(keycode) {
+                                let is_modifier = update_modifiers_from_evdev(
+                                    keycode,
+                                    pressed,
+                                    &ctrl_r,
+                                    &shift_r,
+                                    &alt_r,
+                                    &meta_r,
+                                );
+                                if !is_modifier {
+                                    if let Some(action) = check_hotkey_match(
+                                        key,
+                                        pressed,
+                                        &target_r,
+                                        ctrl_r.load(Ordering::Relaxed),
+                                        shift_r.load(Ordering::Relaxed),
+                                        alt_r.load(Ordering::Relaxed),
+                                        meta_r.load(Ordering::Relaxed),
+                                    ) {
+                                        log::info!("Hotkey {:?} triggered (evdev)", action);
+                                        let _ = tx_r.send(action);
+                                    }
+                                }
+                            }
+                        }
+                        Err(mpsc::RecvTimeoutError::Timeout) => {}
+                        Err(mpsc::RecvTimeoutError::Disconnected) => {
+                            evdev_failed = true;
+                            break;
+                        }
                     }
-                    EventType::KeyPress(Key::ShiftLeft) | EventType::KeyPress(Key::ShiftRight) => {
-                        shift.store(true, Ordering::Relaxed);
-                    }
-                    EventType::KeyRelease(Key::ShiftLeft) | EventType::KeyRelease(Key::ShiftRight) => {
-                        shift.store(false, Ordering::Relaxed);
-                    }
-                    EventType::KeyPress(Key::Alt) | EventType::KeyPress(Key::AltGr) => {
-                        alt.store(true, Ordering::Relaxed);
-                    }
-                    EventType::KeyRelease(Key::Alt) | EventType::KeyRelease(Key::AltGr) => {
-                        alt.store(false, Ordering::Relaxed);
-                    }
-                    EventType::KeyPress(Key::MetaLeft) | EventType::KeyPress(Key::MetaRight) => {
-                        meta.store(true, Ordering::Relaxed);
-                    }
-                    EventType::KeyRelease(Key::MetaLeft) | EventType::KeyRelease(Key::MetaRight) => {
-                        meta.store(false, Ordering::Relaxed);
-                    }
-                    _ => {}
                 }
 
-                if let Some(action) = match_hotkey(
-                    &event,
-                    &target,
-                    ctrl.load(Ordering::Relaxed),
-                    shift.load(Ordering::Relaxed),
-                    alt.load(Ordering::Relaxed),
-                    meta.load(Ordering::Relaxed),
-                ) {
-                    log::info!("Hotkey {:?} triggered", action);
-                    let _ = tx.send(action);
+                let _ = evdev_handle.join();
+                if evdev_failed {
+                    log::error!(
+                        "evdev listener disconnected. Hotkeys won't work.\n\
+                         To fix: add your user to the 'input' group: sudo usermod -aG input $USER"
+                    );
                 }
-            }) {
-                log::error!("Hotkey listener failed: {:?}", e);
             }
+
+            #[cfg(not(target_os = "linux"))]
+            start_rdev_listener(&target_r, &tx_r, &ctrl_r, &shift_r, &alt_r, &meta_r);
         });
 
         self.hotkey_thread = Some(handle);
@@ -394,6 +409,40 @@ fn parse_key(s: &str) -> Option<Key> {
     })
 }
 
+/// Check if a key event matches the target hotkey given current modifier state.
+/// Returns Some(action) if this is a press/release of the target key
+/// with all required modifiers held.
+fn check_hotkey_match(
+    key: Key,
+    pressed: bool,
+    target: &ParsedHotkey,
+    ctrl: bool,
+    shift: bool,
+    alt: bool,
+    meta: bool,
+) -> Option<HotkeyAction> {
+    // Check modifier state matches the target
+    if ctrl != target.ctrl
+        || shift != target.shift
+        || alt != target.alt
+        || meta != target.meta
+    {
+        // If no modifiers are required, still allow the match
+        if target.ctrl || target.shift || target.alt || target.meta {
+            return None;
+        }
+    }
+
+    if key == target.key {
+        return Some(if pressed {
+            HotkeyAction::Press
+        } else {
+            HotkeyAction::Release
+        });
+    }
+    None
+}
+
 fn match_hotkey(
     event: &Event,
     target: &ParsedHotkey,
@@ -402,52 +451,151 @@ fn match_hotkey(
     alt: bool,
     meta: bool,
 ) -> Option<HotkeyAction> {
-    // Check modifier state matches the target
-    if ctrl != target.ctrl || shift != target.shift || alt != target.alt || meta != target.meta {
-        // Allow firing if no modifiers required and this is the target key
-        if target.ctrl || target.shift || target.alt || target.meta {
-            return None;
-        }
-    }
+    let (key, pressed) = match &event.event_type {
+        EventType::KeyPress(k) => (*k, true),
+        EventType::KeyRelease(k) => (*k, false),
+        EventType::ButtonPress(b) => (mouse_button_to_key(*b), true),
+        EventType::ButtonRelease(b) => (mouse_button_to_key(*b), false),
+        _ => return None,
+    };
+    check_hotkey_match(key, pressed, target, ctrl, shift, alt, meta)
+}
 
-    match &event.event_type {
-        EventType::KeyPress(k) => {
-            if *k == target.key {
-                return Some(HotkeyAction::Press);
+fn mouse_button_to_key(b: rdev::Button) -> Key {
+    match b {
+        rdev::Button::Left => Key::Unknown(0x100),
+        rdev::Button::Right => Key::Unknown(0x101),
+        rdev::Button::Middle => Key::Unknown(0x102),
+        _ => Key::Unknown(0),
+    }
+}
+
+#[cfg(target_os = "linux")]
+fn evdev_to_rdev_key(code: u16) -> Option<Key> {
+    // Linux evdev keycode to rdev Key mapping
+    // See: https://github.com/torvalds/linux/blob/master/include/uapi/linux/input-event-codes.h
+    // KEY_* values are constant; here we just match on the numeric value.
+    Some(match code {
+        2 => Key::Num1, 3 => Key::Num2, 4 => Key::Num3, 5 => Key::Num4,
+        6 => Key::Num5, 7 => Key::Num6, 8 => Key::Num7, 9 => Key::Num8,
+        10 => Key::Num9, 11 => Key::Num0,
+        16 => Key::KeyQ, 17 => Key::KeyW, 18 => Key::KeyE, 19 => Key::KeyR,
+        20 => Key::KeyT, 21 => Key::KeyY, 22 => Key::KeyU, 23 => Key::KeyI,
+        24 => Key::KeyO, 25 => Key::KeyP,
+        30 => Key::KeyA, 31 => Key::KeyS, 32 => Key::KeyD, 33 => Key::KeyF,
+        34 => Key::KeyG, 35 => Key::KeyH, 36 => Key::KeyJ, 37 => Key::KeyK,
+        38 => Key::KeyL,
+        44 => Key::KeyZ, 45 => Key::KeyX, 46 => Key::KeyC, 47 => Key::KeyV,
+        48 => Key::KeyB, 49 => Key::KeyN, 50 => Key::KeyM,
+        59 => Key::F1, 60 => Key::F2, 61 => Key::F3, 62 => Key::F4,
+        63 => Key::F5, 64 => Key::F6, 65 => Key::F7, 66 => Key::F8,
+        67 => Key::F9, 68 => Key::F10, 87 => Key::F11, 88 => Key::F12,
+        1 => Key::Escape, 57 => Key::Space, 28 => Key::Return, 15 => Key::Tab,
+        14 => Key::Backspace, 111 => Key::Delete, 110 => Key::Insert,
+        102 => Key::Home, 107 => Key::End,
+        104 => Key::PageUp, 109 => Key::PageDown,
+        103 => Key::UpArrow, 108 => Key::DownArrow,
+        105 => Key::LeftArrow, 106 => Key::RightArrow,
+        29 => Key::ControlLeft, 97 => Key::ControlRight,
+        42 => Key::ShiftLeft, 54 => Key::ShiftRight,
+        56 => Key::Alt, 100 => Key::AltGr,
+        125 => Key::MetaLeft, 126 => Key::MetaRight,
+        _ => return None,
+    })
+}
+
+#[cfg(target_os = "linux")]
+fn is_modifier_keycode(code: u16) -> bool {
+    matches!(
+        code,
+        29 | 97   // LeftCtrl, RightCtrl
+        | 42 | 54 // LeftShift, RightShift
+        | 56 | 100 // LeftAlt, RightAlt
+        | 125 | 126 // LeftMeta, RightMeta
+    )
+}
+
+#[cfg(target_os = "linux")]
+fn update_modifiers_from_evdev(
+    code: u16,
+    pressed: bool,
+    ctrl: &AtomicBool,
+    shift: &AtomicBool,
+    alt: &AtomicBool,
+    meta: &AtomicBool,
+) -> bool {
+    if !is_modifier_keycode(code) {
+        return false;
+    }
+    match code {
+        29 | 97 => ctrl.store(pressed, Ordering::Relaxed),
+        42 | 54 => shift.store(pressed, Ordering::Relaxed),
+        56 | 100 => alt.store(pressed, Ordering::Relaxed),
+        125 | 126 => meta.store(pressed, Ordering::Relaxed),
+        _ => {}
+    }
+    true
+}
+
+#[cfg(not(target_os = "linux"))]
+fn start_rdev_listener(
+    target: &ParsedHotkey,
+    tx: &mpsc::Sender<HotkeyAction>,
+    ctrl: &AtomicBool,
+    shift: &AtomicBool,
+    alt: &AtomicBool,
+    meta: &AtomicBool,
+) {
+    let target = *target;
+    let tx = tx.clone();
+    let ctrl = ctrl.clone();
+    let shift = shift.clone();
+    let alt = alt.clone();
+    let meta = meta.clone();
+
+    if let Err(e) = listen(move |event| {
+        // Update modifier state
+        match &event.event_type {
+            EventType::KeyPress(Key::ControlLeft) | EventType::KeyPress(Key::ControlRight) => {
+                ctrl.store(true, Ordering::Relaxed);
             }
-            None
-        }
-        EventType::KeyRelease(k) => {
-            if *k == target.key {
-                return Some(HotkeyAction::Release);
+            EventType::KeyRelease(Key::ControlLeft) | EventType::KeyRelease(Key::ControlRight) => {
+                ctrl.store(false, Ordering::Relaxed);
             }
-            None
-        }
-        EventType::ButtonPress(b) => {
-            let mapped = match b {
-                rdev::Button::Left => Key::Unknown(0x100),
-                rdev::Button::Right => Key::Unknown(0x101),
-                rdev::Button::Middle => Key::Unknown(0x102),
-                _ => return None,
-            };
-            if mapped == target.key {
-                return Some(HotkeyAction::Press);
+            EventType::KeyPress(Key::ShiftLeft) | EventType::KeyPress(Key::ShiftRight) => {
+                shift.store(true, Ordering::Relaxed);
             }
-            None
-        }
-        EventType::ButtonRelease(b) => {
-            let mapped = match b {
-                rdev::Button::Left => Key::Unknown(0x100),
-                rdev::Button::Right => Key::Unknown(0x101),
-                rdev::Button::Middle => Key::Unknown(0x102),
-                _ => return None,
-            };
-            if mapped == target.key {
-                return Some(HotkeyAction::Release);
+            EventType::KeyRelease(Key::ShiftLeft) | EventType::KeyRelease(Key::ShiftRight) => {
+                shift.store(false, Ordering::Relaxed);
             }
-            None
+            EventType::KeyPress(Key::Alt) | EventType::KeyPress(Key::AltGr) => {
+                alt.store(true, Ordering::Relaxed);
+            }
+            EventType::KeyRelease(Key::Alt) | EventType::KeyRelease(Key::AltGr) => {
+                alt.store(false, Ordering::Relaxed);
+            }
+            EventType::KeyPress(Key::MetaLeft) | EventType::KeyPress(Key::MetaRight) => {
+                meta.store(true, Ordering::Relaxed);
+            }
+            EventType::KeyRelease(Key::MetaLeft) | EventType::KeyRelease(Key::MetaRight) => {
+                meta.store(false, Ordering::Relaxed);
+            }
+            _ => {}
         }
-        _ => None,
+
+        if let Some(action) = match_hotkey(
+            &event,
+            &target,
+            ctrl.load(Ordering::Relaxed),
+            shift.load(Ordering::Relaxed),
+            alt.load(Ordering::Relaxed),
+            meta.load(Ordering::Relaxed),
+        ) {
+            log::info!("Hotkey {:?} triggered (rdev)", action);
+            let _ = tx.send(action);
+        }
+    }) {
+        log::error!("rdev listener failed: {:?}", e);
     }
 }
 

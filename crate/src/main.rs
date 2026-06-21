@@ -24,6 +24,10 @@ type PlatformBackend = backend::macos::MacosBackend;
 type PlatformBackend = backend::linux::LinuxBackend;
 
 fn main() -> Result<(), eframe::Error> {
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info"))
+        .format_timestamp_secs()
+        .init();
+
     let mut options = eframe::NativeOptions::default();
     options.viewport = egui::ViewportBuilder::default()
         .with_inner_size([650.0, 210.0])
@@ -50,6 +54,7 @@ pub struct BlearApp {
     hotkey_tx: mpsc::Sender<HotkeyAction>,
     outcome_tx: mpsc::Sender<ClickerOutcome>,
     outcome_rx: mpsc::Receiver<ClickerOutcome>,
+    pick_rx: Option<mpsc::Receiver<crate::ui::sequence_picker::PickResult>>,
     hotkey_thread: Option<thread::JoinHandle<()>>,
     clicker_thread: Option<thread::JoinHandle<()>>,
     #[cfg(target_os = "linux")]
@@ -62,6 +67,7 @@ struct ClickerOutcome {
     elapsed_secs: f64,
 }
 
+#[derive(Debug)]
 enum HotkeyAction {
     Toggle,
     Press,
@@ -96,6 +102,7 @@ impl BlearApp {
             hotkey_tx: tx,
             outcome_tx,
             outcome_rx,
+            pick_rx: None,
             hotkey_thread: None,
             clicker_thread: None,
             #[cfg(target_os = "linux")]
@@ -110,11 +117,21 @@ impl BlearApp {
         let handle = thread::spawn(move || {
             let target = match parse_hotkey(&hotkey_str) {
                 Some(h) => h,
-                None => return,
+                None => {
+                    log::error!("Could not parse hotkey: {}", hotkey_str);
+                    return;
+                }
             };
+
+            log::info!(
+                "Starting hotkey listener for {:?} (DISPLAY={:?})",
+                target,
+                std::env::var("DISPLAY").ok()
+            );
 
             if let Err(e) = listen(move |event| {
                 if let Some(action) = match_hotkey(&event, &target) {
+                    log::info!("Hotkey {:?} triggered", action);
                     let _ = tx.send(action);
                 }
             }) {
@@ -169,6 +186,22 @@ impl BlearApp {
         }
     }
 
+    fn poll_pick_result(&mut self) {
+        if let Some(rx) = self.pick_rx.as_ref() {
+            if let Ok(result) = rx.try_recv() {
+                self.pick_rx = None;
+                match result {
+                    crate::ui::sequence_picker::PickResult::Done(points) => {
+                        self.settings.sequence_points = points;
+                    }
+                    crate::ui::sequence_picker::PickResult::Cancelled => {
+                        // Keep existing points
+                    }
+                }
+            }
+        }
+    }
+
     fn poll_clicker_outcome(&mut self) {
         while let Ok(outcome) = self.outcome_rx.try_recv() {
             self.stop_reason = Some(outcome.stop_reason);
@@ -201,6 +234,7 @@ impl BlearApp {
 }
 
 /// Parsed hotkey — which key + which modifiers
+#[derive(Debug)]
 struct ParsedHotkey {
     key: Key,
     ctrl: bool,
@@ -332,6 +366,7 @@ impl eframe::App for BlearApp {
 
         self.poll_hotkey_events();
         self.poll_clicker_outcome();
+        self.poll_pick_result();
 
         if self.hotkey_thread.is_none() && !self.settings.hotkey.is_empty() {
             self.start_hotkey_listener();
@@ -397,7 +432,7 @@ impl eframe::App for BlearApp {
                                 simple_panel::show(ui, &mut self.settings);
                             }
                             Tab::Advanced => {
-                                advanced_panel::show(ui, &mut self.settings);
+                                advanced_panel::show(ui, &mut self.settings, &mut self.pick_rx);
                             }
                             Tab::Zones => {
                                 zones_panel::show(ui, &mut self.settings);

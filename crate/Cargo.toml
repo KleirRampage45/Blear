@@ -31,6 +31,7 @@ ureq = "3"
 semver = "1"
 # Logging
 log = "0.4"
+env_logger = "0.11"
 # libc (uinput ioctl for Wayland backend)
 libc = "0.2"
 # Open URLs/files

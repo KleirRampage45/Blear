@@ -74,7 +74,7 @@ pub fn ensure_xwayland() -> Option<XWaylandHandle> {
         .arg("-rootless")
         .arg("-terminate")
         .arg("-nolisten")
-        .arg("unix")
+        .arg("tcp")
         .stdout(Stdio::null())
         .stderr(Stdio::null())
         .spawn()

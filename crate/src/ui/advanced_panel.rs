@@ -1,8 +1,14 @@
 use eframe::egui;
 use crate::settings::*;
+use crate::ui::sequence_picker;
 use crate::ui::widgets;
+use std::sync::mpsc;
 
-pub fn show(ui: &mut egui::Ui, settings: &mut Settings) {
+pub fn show(
+    ui: &mut egui::Ui,
+    settings: &mut Settings,
+    pick_rx: &mut Option<mpsc::Receiver<sequence_picker::PickResult>>,
+) {
     // Determine layout
     let is_tall = settings.advanced_layout == AdvancedLayout::Tall;
 
@@ -14,7 +20,7 @@ pub fn show(ui: &mut egui::Ui, settings: &mut Settings) {
             limits_section(ui, settings);
             speed_variation_section(ui, settings);
             double_click_section(ui, settings);
-            sequence_section(ui, settings);
+            sequence_section(ui, settings, pick_rx);
         });
     } else {
         // Two columns: settings | sequence
@@ -30,7 +36,7 @@ pub fn show(ui: &mut egui::Ui, settings: &mut Settings) {
             ui.separator();
             ui.vertical(|ui| {
                 ui.set_min_width(240.0);
-                sequence_section(ui, settings);
+                sequence_section(ui, settings, pick_rx);
             });
         });
     }
@@ -188,19 +194,33 @@ fn limits_section(ui: &mut egui::Ui, settings: &mut Settings) {
     });
 }
 
-fn sequence_section(ui: &mut egui::Ui, settings: &mut Settings) {
+fn sequence_section(
+    ui: &mut egui::Ui,
+    settings: &mut Settings,
+    pick_rx: &mut Option<mpsc::Receiver<sequence_picker::PickResult>>,
+) {
     widgets::section_card(ui, "Sequence Clicking", true, "Click at multiple positions in order", |ui| {
         ui.checkbox(&mut settings.sequence_enabled, "Enabled");
 
         if settings.sequence_enabled {
             ui.add_space(4.0);
-            if ui.button("+ Add Point").clicked() {
-                settings.sequence_points.push(crate::settings::SequencePoint {
-                    id: uuid_v4(),
-                    x: 0,
-                    y: 0,
-                    clicks: 1,
-                });
+            ui.horizontal(|ui| {
+                if ui.button("Start Picking").clicked() && pick_rx.is_none() {
+                    let ctx = ui.ctx().clone();
+                    let points = std::mem::take(&mut settings.sequence_points);
+                    *pick_rx = Some(sequence_picker::start(ctx, points));
+                }
+                if ui.button("+ Add Manual").clicked() {
+                    settings.sequence_points.push(crate::settings::SequencePoint {
+                        id: uuid_v4(),
+                        x: 0,
+                        y: 0,
+                        clicks: 1,
+                    });
+                }
+            });
+            if pick_rx.is_some() {
+                ui.label(egui::RichText::new("Picking active — click on the overlay to add points").color(egui::Color32::YELLOW));
             }
 
             let count = settings.sequence_points.len();

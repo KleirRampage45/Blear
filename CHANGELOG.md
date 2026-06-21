@@ -10,18 +10,22 @@
   - Supports keyboard keys (A-Z, 0-9, F1-F12, special keys)
   - Supports mouse buttons (left/right/middle)
   - Hold and Toggle modes
+- **XWayland auto-spawn** — automatically starts a private XWayland instance on Wayland sessions without DISPLAY so hotkeys work without manual X11 setup
 - **Settings persistence** — saves to `~/.config/blear/settings.json` (or platform equivalent)
-- **Usage stats tracking** — total clicks, total time, sessions, average CPS
+- **Usage stats tracking** — total clicks, total time, sessions, average CPS, CPU usage
 - **Click batching at high CPS** — batches multiple clicks per loop iteration for accuracy
 - **Stop reason display** — shows why the clicker stopped
 - **Window resize per tab** — each tab has appropriate dimensions
 - **Auto-updater wired** — "Check for Update" button in settings
 - **Social links** — Ko-fi, GitHub, Discord buttons in About card
 - **Changelog in settings** — collapsible changelog
-- **Presets** — save/load named configurations with full snapshot
-- **Sequence clicking with editable fields** — add/remove/edit X/Y/clicks
-- **All UI tabs** — Simple, Advanced, Zones, Settings matching upstream
-- **Upstream feature parity** — corner stop, edge stop, custom stop zone, duty cycle, speed variation, double click, click/time limits
+- **Presets** — save/load named configurations with full snapshot (preserves stats on apply)
+- **Sequence picking overlay** — fullscreen viewport for click-to-place sequence points
+- **Custom stop zone drawing overlay** — click-drag to define rectangular zone
+- **Run on Startup** — Linux (.desktop file) and Windows (registry) support
+- **i18n** — English and Spanish translations
+- **CPU usage sampler** — /proc/stat on Linux, GetProcessTimes on Windows
+- **30 unit tests** covering settings, engine, cycle, failsafe, updater, autostart
 
 ## Fixed
 - Linux dispatcher: Wayland backend properly selected when WAYLAND_DISPLAY is set
@@ -30,6 +34,8 @@
 - Always-on-top: wired to egui viewport commands
 - Speed variation toggle: removed double-wired checkbox bug
 - Close button: uses ViewportCommand::Close so on_exit saves settings
+- Settings save errors now logged with detailed messages
+- Preset apply no longer clobbers user stats
 
 ## Changed
 - Switched from `global-hotkey` (X11-only) to `rdev` (cross-platform)

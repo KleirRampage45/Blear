@@ -135,11 +135,10 @@ fn duty_cycle_section(ui: &mut egui::Ui, settings: &mut Settings) {
 fn speed_variation_section(ui: &mut egui::Ui, settings: &mut Settings) {
     widgets::section_card(ui, "Speed Variation", true, "Randomize click interval", |ui| {
         ui.horizontal(|ui| {
-            widgets::toggle_btn(ui, "variation-enabled", settings.speed_variation_enabled, true);
-            settings.speed_variation_enabled = !settings.speed_variation_enabled; // toggle_btn returns bool
-            // Actually let's just use a checkbox
             ui.checkbox(&mut settings.speed_variation_enabled, "");
-            widgets::number_input(ui, &mut settings.speed_variation, 0, 200, 50.0);
+            let mut val = settings.speed_variation as u32;
+            widgets::number_input(ui, &mut val, 0, 200, 50.0);
+            settings.speed_variation = val;
             ui.label("%");
         });
     });

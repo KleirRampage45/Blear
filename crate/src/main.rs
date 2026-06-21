@@ -67,9 +67,10 @@ pub enum Tab {
 impl BlearApp {
     fn new(_cc: &eframe::CreationContext<'_>) -> Self {
         let (tx, rx) = mpsc::channel();
+        let settings = Settings::load().unwrap_or_default();
 
         Self {
-            settings: Settings::default(),
+            settings,
             tab: Tab::Simple,
             running: Arc::new(AtomicBool::new(false)),
             click_count: 0,
@@ -336,6 +337,7 @@ impl eframe::App for BlearApp {
                     &mut self.settings,
                     self.running.load(Ordering::Relaxed),
                     self.stop_reason.as_deref(),
+                    ctx,
                 );
                 ui.separator();
 
@@ -366,5 +368,9 @@ impl eframe::App for BlearApp {
         if self.running.load(Ordering::Relaxed) {
             ctx.request_repaint();
         }
+    }
+
+    fn on_exit(&mut self, _gl: Option<&eframe::glow::Context>) {
+        self.settings.save();
     }
 }

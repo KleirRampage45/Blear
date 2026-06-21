@@ -299,4 +299,40 @@ impl Settings {
             1.0
         }
     }
+
+    pub fn config_dir() -> Option<std::path::PathBuf> {
+        dirs::config_dir().map(|p| p.join("blear"))
+    }
+
+    pub fn config_path() -> Option<std::path::PathBuf> {
+        Self::config_dir().map(|p| p.join("settings.json"))
+    }
+
+    pub fn load() -> Option<Self> {
+        let path = Self::config_path()?;
+        let data = std::fs::read_to_string(path).ok()?;
+        serde_json::from_str(&data).ok()
+    }
+
+    pub fn save(&self) {
+        let path = match Self::config_path() {
+            Some(p) => p,
+            None => return,
+        };
+        if let Some(dir) = path.parent() {
+            let _ = std::fs::create_dir_all(dir);
+        }
+        let data = match serde_json::to_string_pretty(self) {
+            Ok(d) => d,
+            Err(_) => return,
+        };
+        let dir = path.parent().unwrap_or(std::path::Path::new("."));
+        let mut tmp = match tempfile::NamedTempFile::new_in(dir) {
+            Ok(t) => t,
+            Err(_) => return,
+        };
+        use std::io::Write;
+        let _ = tmp.write_all(data.as_bytes());
+        let _ = tmp.persist(&path);
+    }
 }

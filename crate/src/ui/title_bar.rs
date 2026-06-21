@@ -2,7 +2,7 @@ use crate::settings::Settings;
 use crate::Tab;
 use eframe::egui;
 
-pub fn show(ui: &mut egui::Ui, tab: &mut Tab, settings: &mut Settings, running: bool, stop_reason: Option<&str>) {
+pub fn show(ui: &mut egui::Ui, tab: &mut Tab, settings: &mut Settings, running: bool, stop_reason: Option<&str>, ctx: &egui::Context) {
     let is_dark = settings.theme == crate::settings::Theme::Dark;
 
     ui.horizontal(|ui| {
@@ -46,7 +46,7 @@ pub fn show(ui: &mut egui::Ui, tab: &mut Tab, settings: &mut Settings, running: 
 
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
             if ui.add(egui::Button::new("✕").min_size(egui::vec2(24.0, 24.0))).clicked() {
-                std::process::exit(0);
+                ctx.send_viewport_cmd(egui::viewport::ViewportCommand::Close);
             }
             if ui.add(egui::Button::new("─").min_size(egui::vec2(24.0, 24.0))).clicked() {
             }

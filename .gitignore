@@ -7,6 +7,7 @@ dist-ssr/
 src-tauri/target/
 /gen/schemas
 profile.json.gz
+target/
 
 # -- Environment --
 .env

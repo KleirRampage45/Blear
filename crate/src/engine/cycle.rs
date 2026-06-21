@@ -73,3 +73,80 @@ where
     release();
     true
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_single_click_plan() {
+        let plan = ClickCyclePlan::single(50);
+        assert_eq!(plan.kind, ClickCycleKind::Single);
+        assert_eq!(plan.first_hold_ms, 50);
+        assert_eq!(plan.inter_click_gap_ms, 0);
+    }
+
+    #[test]
+    fn test_double_click_plan() {
+        let plan = ClickCyclePlan::double(100, 500, 150);
+        assert_eq!(plan.kind, ClickCycleKind::Double);
+        assert_eq!(plan.inter_click_gap_ms, 150);
+        assert_eq!(plan.second_hold_ms, 100);
+    }
+
+    #[test]
+    fn test_double_click_gap_clamped() {
+        // gap_ms > cycle_ms - 1 should be clamped
+        let plan = ClickCyclePlan::double(100, 200, 500);
+        assert_eq!(plan.inter_click_gap_ms, 199);
+    }
+
+    #[test]
+    fn test_execute_single_cycle() {
+        let mut press_count = 0;
+        let mut release_count = 0;
+        let result = execute_click_cycle(
+            ClickCyclePlan::single(0),
+            &mut || press_count += 1,
+            &mut || release_count += 1,
+            &mut |_| {},
+            &|| true,
+        );
+        assert!(result);
+        assert_eq!(press_count, 1);
+        assert_eq!(release_count, 1);
+    }
+
+    #[test]
+    fn test_execute_double_cycle() {
+        let mut press_count = 0;
+        let mut release_count = 0;
+        let result = execute_click_cycle(
+            ClickCyclePlan::double(0, 500, 100),
+            &mut || press_count += 1,
+            &mut || release_count += 1,
+            &mut |_| {},
+            &|| true,
+        );
+        assert!(result);
+        assert_eq!(press_count, 2);
+        assert_eq!(release_count, 2);
+    }
+
+    #[test]
+    fn test_execute_aborted_when_inactive() {
+        let mut press_count = 0;
+        let mut release_count = 0;
+        // Pre-set inactive
+        let result = execute_click_cycle(
+            ClickCyclePlan::single(50),
+            &mut || press_count += 1,
+            &mut || release_count += 1,
+            &mut |_| {},
+            &|| false,
+        );
+        assert!(!result);
+        assert_eq!(press_count, 0);
+        assert_eq!(release_count, 0);
+    }
+}

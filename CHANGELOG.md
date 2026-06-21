@@ -1,3 +1,45 @@
+# v1.0.0 - 21.06.2026
+## New
+- **Native Rust rewrite** — complete UI/UX rewrite in egui (no Webview2, no Tauri)
+- **Cross-platform backends**:
+  - Windows: SendInput (complete)
+  - Linux X11: XTest extension via x11rb (complete)
+  - Linux Wayland: /dev/uinput virtual device (complete, with dispatcher)
+  - macOS: Core Graphics CGEvent (complete)
+- **Global hotkeys via rdev** — works on X11, Wayland (via XWayland), Windows, macOS
+  - Supports keyboard keys (A-Z, 0-9, F1-F12, special keys)
+  - Supports mouse buttons (left/right/middle)
+  - Hold and Toggle modes
+- **Settings persistence** — saves to `~/.config/blear/settings.json` (or platform equivalent)
+- **Usage stats tracking** — total clicks, total time, sessions, average CPS
+- **Click batching at high CPS** — batches multiple clicks per loop iteration for accuracy
+- **Stop reason display** — shows why the clicker stopped
+- **Window resize per tab** — each tab has appropriate dimensions
+- **Auto-updater wired** — "Check for Update" button in settings
+- **Social links** — Ko-fi, GitHub, Discord buttons in About card
+- **Changelog in settings** — collapsible changelog
+- **Presets** — save/load named configurations with full snapshot
+- **Sequence clicking with editable fields** — add/remove/edit X/Y/clicks
+- **All UI tabs** — Simple, Advanced, Zones, Settings matching upstream
+- **Upstream feature parity** — corner stop, edge stop, custom stop zone, duty cycle, speed variation, double click, click/time limits
+
+## Fixed
+- Linux dispatcher: Wayland backend properly selected when WAYLAND_DISPLAY is set
+- Failsafe: uses real screen dimensions from backend (was hardcoded 3840x2160)
+- Clicker engine: thread spawn on hotkey toggle, proper start/stop
+- Always-on-top: wired to egui viewport commands
+- Speed variation toggle: removed double-wired checkbox bug
+- Close button: uses ViewportCommand::Close so on_exit saves settings
+
+## Changed
+- Switched from `global-hotkey` (X11-only) to `rdev` (cross-platform)
+- Switched from Tauri to pure native egui
+- Binary target: ~2-3MB, RAM target: ~10-15MB
+
+# v0.1.0 - Fork date unknown
+## New
+- Forked Blur-AutoClicker v3.7.2 into Blear
+
 # v3.7.2 - 15.06.2026 (d.m.y)
 ## Fixed
 - clicker not clicking.

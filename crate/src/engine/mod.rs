@@ -112,3 +112,41 @@ pub fn parse_key_code(key: &str) -> u16 {
         _ => 0,
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_letters() {
+        assert_eq!(parse_key_code("a"), 0x41);
+        assert_eq!(parse_key_code("z"), 0x5A);
+        assert_eq!(parse_key_code("Y"), 0x59); // case insensitive
+    }
+
+    #[test]
+    fn test_parse_digits() {
+        assert_eq!(parse_key_code("0"), 0x30);
+        assert_eq!(parse_key_code("9"), 0x39);
+    }
+
+    #[test]
+    fn test_parse_function_keys() {
+        assert_eq!(parse_key_code("f1"), 0x70);
+        assert_eq!(parse_key_code("F12"), 0x7B);
+    }
+
+    #[test]
+    fn test_parse_special_keys() {
+        assert_eq!(parse_key_code("space"), 0x20);
+        assert_eq!(parse_key_code("enter"), 0x0D);
+        assert_eq!(parse_key_code("escape"), 0x1B);
+        assert_eq!(parse_key_code("backspace"), 0x08);
+    }
+
+    #[test]
+    fn test_parse_unknown_key() {
+        assert_eq!(parse_key_code("not_a_key"), 0);
+        assert_eq!(parse_key_code(""), 0);
+    }
+}

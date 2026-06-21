@@ -45,6 +45,14 @@ pub fn start_clicker<B: ClickerBackend>(
         else if cps >= 50.0 { config.duty_cycle.min(98.0) }
         else { config.duty_cycle };
 
+    // At high CPS, batch multiple clicks per loop iteration to avoid overhead.
+    // Each batch call takes ~1ms minimum, so target ~1 batch per 10ms.
+    let batch_size: u32 = if cps > 100.0 {
+        ((cps / 100.0).ceil() as u32).max(1)
+    } else {
+        1
+    };
+
     let screen = {
         let s = backend.virtual_screen();
         (s.width, s.height)
@@ -70,6 +78,13 @@ pub fn start_clicker<B: ClickerBackend>(
             break;
         }
 
+        // Stop if batch would exceed click limit
+        let per_batch = if config.double_click_enabled { 2 } else { 1 };
+        if config.click_limit > 0 && click_count + (batch_size as u64 * per_batch) > config.click_limit as u64 {
+            stop_reason = format!("Click limit reached ({})", config.click_limit);
+            break;
+        }
+
         // Calculate interval with variation
         let base_interval_ms = config.interval_secs * 1000.0;
         let variation = if config.variation > 0.0 {
@@ -84,33 +99,36 @@ pub fn start_clicker<B: ClickerBackend>(
         } else { 0 };
 
         if is_keyboard {
-            // Send key press - inline the click cycle to avoid double borrow
             let use_shift = config.keyboard_uppercase;
             let vk = config.key_code;
-            if use_shift { backend.key_down(0x10); }
-            backend.key_down(vk);
-            std::thread::sleep(Duration::from_millis(1));
-            backend.key_up(vk);
-            if use_shift { backend.key_up(0x10); }
+            for _ in 0..batch_size {
+                if use_shift { backend.key_down(0x10); }
+                backend.key_down(vk);
+                std::thread::sleep(Duration::from_millis(1));
+                backend.key_up(vk);
+                if use_shift { backend.key_up(0x10); }
+            }
         } else {
-            // Send mouse click - inline the click cycle
-            let button = config.button.clone();
-            backend.mouse_down(button.clone());
-            std::thread::sleep(Duration::from_millis(1));
-            backend.mouse_up(button);
-
-            click_count += if config.double_click_enabled { 2 } else { 1 };
+            let button = &config.button;
+            for _ in 0..batch_size {
+                backend.mouse_down(button.clone());
+                std::thread::sleep(Duration::from_millis(1));
+                backend.mouse_up(button.clone());
+            }
+            click_count += batch_size as u64 * if config.double_click_enabled { 2 } else { 1 };
         }
 
-        // Sleep remaining interval time
-        if cycle_ms > holds_ms {
+        // Sleep remaining interval time (scaled by batch size)
+        if cycle_ms > 0 {
+            let total_cycle_ms = (cycle_ms as u64) * (batch_size as u64);
+            let total_holds_ms = (holds_ms as u64) * (batch_size as u64);
             let sleep_ms = if config.double_click_enabled {
-                cycle_ms.saturating_sub(holds_ms.saturating_add(config.double_click_gap_ms))
+                total_cycle_ms.saturating_sub(total_holds_ms.saturating_add((config.double_click_gap_ms as u64) * (batch_size as u64)))
             } else {
-                cycle_ms.saturating_sub(holds_ms)
+                total_cycle_ms.saturating_sub(total_holds_ms)
             };
             if sleep_ms > 0 {
-                let deadline = Instant::now() + Duration::from_millis(sleep_ms as u64);
+                let deadline = Instant::now() + Duration::from_millis(sleep_ms);
                 while Instant::now() < deadline {
                     if !control.is_active() {
                         return RunOutcome { stop_reason: "Stopped".to_string(), click_count, elapsed_secs: start_time.elapsed().as_secs_f64() };

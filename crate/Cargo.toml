@@ -33,6 +33,8 @@ semver = "1"
 log = "0.4"
 # libc (uinput ioctl for Wayland backend)
 libc = "0.2"
+# Open URLs/files
+open = "5"
 
 # Platform-specific
 [target.'cfg(target_os = "windows")'.dependencies]

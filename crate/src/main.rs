@@ -55,6 +55,7 @@ pub struct BlearApp {
 struct ClickerOutcome {
     stop_reason: String,
     click_count: u64,
+    elapsed_secs: f64,
 }
 
 enum HotkeyAction {
@@ -144,6 +145,7 @@ impl BlearApp {
             let _ = outcome_tx.send(ClickerOutcome {
                 stop_reason: outcome.stop_reason,
                 click_count: outcome.click_count,
+                elapsed_secs: outcome.elapsed_secs,
             });
         });
 
@@ -161,6 +163,7 @@ impl BlearApp {
         while let Ok(outcome) = self.outcome_rx.try_recv() {
             self.stop_reason = Some(outcome.stop_reason);
             self.click_count = outcome.click_count;
+            self.settings.stats.record_session(outcome.click_count, outcome.elapsed_secs);
         }
     }
 
@@ -331,6 +334,21 @@ impl eframe::App for BlearApp {
                 if aot { WindowLevel::AlwaysOnTop } else { WindowLevel::Normal },
             ));
         }
+
+        // Resize window per tab
+        let tab_size: [f32; 2] = match self.tab {
+            Tab::Simple => [650.0, 220.0],
+            Tab::Advanced => {
+                if self.settings.advanced_layout == settings::AdvancedLayout::Wide {
+                    [912.0, 540.0]
+                } else {
+                    [560.0, 740.0]
+                }
+            }
+            Tab::Zones => [560.0, 420.0],
+            Tab::Settings => [560.0, 720.0],
+        };
+        ctx.send_viewport_cmd(ViewportCommand::InnerSize(egui::vec2(tab_size[0], tab_size[1])));
 
         let is_dark = self.settings.theme == settings::Theme::Dark;
 

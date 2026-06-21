@@ -21,6 +21,36 @@ pub struct PresetDefinition {
 
 pub type PresetSnapshot = std::collections::HashMap<String, serde_json::Value>;
 
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+pub struct UsageStats {
+    pub total_clicks: u64,
+    pub total_seconds: f64,
+    pub sessions: u32,
+    pub last_session_clicks: u64,
+    pub last_session_seconds: f64,
+}
+
+impl UsageStats {
+    pub fn record_session(&mut self, clicks: u64, seconds: f64) {
+        if clicks == 0 {
+            return;
+        }
+        self.total_clicks += clicks;
+        self.total_seconds += seconds;
+        self.sessions += 1;
+        self.last_session_clicks = clicks;
+        self.last_session_seconds = seconds;
+    }
+
+    pub fn average_cpu(&self) -> f64 {
+        if self.total_seconds > 0.0 {
+            (self.total_clicks as f64) / self.total_seconds
+        } else {
+            0.0
+        }
+    }
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub enum ClickInterval {
     #[serde(rename = "s")]
@@ -208,6 +238,9 @@ pub struct Settings {
     // Presets
     pub presets: Vec<PresetDefinition>,
     pub active_preset_id: Option<PresetId>,
+
+    // Usage stats
+    pub stats: UsageStats,
 }
 
 impl Default for Settings {
@@ -266,6 +299,7 @@ impl Default for Settings {
             language: "en".to_string(),
             presets: Vec::new(),
             active_preset_id: None,
+            stats: UsageStats::default(),
         }
     }
 }
@@ -334,5 +368,93 @@ impl Settings {
         use std::io::Write;
         let _ = tmp.write_all(data.as_bytes());
         let _ = tmp.persist(&path);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_default_settings() {
+        let s = Settings::default();
+        assert_eq!(s.hotkey, "ctrl+y");
+        assert!(s.corner_stop_enabled);
+        assert!(s.edge_stop_enabled);
+        assert_eq!(s.click_speed, 25);
+    }
+
+    #[test]
+    fn test_effective_cps_rate_mode() {
+        let mut s = Settings::default();
+        s.rate_input_mode = RateInputMode::Rate;
+        s.click_speed = 10;
+        s.click_interval = ClickInterval::Second;
+        assert!((s.effective_cps() - 10.0).abs() < 0.001);
+
+        s.click_interval = ClickInterval::Minute;
+        assert!((s.effective_cps() - 10.0 / 60.0).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_effective_cps_duration_mode() {
+        let mut s = Settings::default();
+        s.rate_input_mode = RateInputMode::Duration;
+        s.duration_milliseconds = 100; // 100ms = 10 CPS
+        assert!((s.effective_cps() - 10.0).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_max_click_speed() {
+        let mut s = Settings::default();
+        assert_eq!(s.max_click_speed(), 500);
+        s.extended_click_speed_limit = true;
+        assert_eq!(s.max_click_speed(), 1000);
+    }
+
+    #[test]
+    fn test_interval_secs() {
+        let mut s = Settings::default();
+        s.rate_input_mode = RateInputMode::Rate;
+        s.click_speed = 10;
+        s.click_interval = ClickInterval::Second;
+        assert!((s.interval_secs() - 0.1).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_serialize_deserialize_roundtrip() {
+        let s = Settings::default();
+        let json = serde_json::to_string(&s).unwrap();
+        let parsed: Settings = serde_json::from_str(&json).unwrap();
+        assert_eq!(parsed.hotkey, s.hotkey);
+        assert_eq!(parsed.click_speed, s.click_speed);
+        assert_eq!(parsed.theme, s.theme);
+    }
+
+    #[test]
+    fn test_stats_record_session() {
+        let mut stats = UsageStats::default();
+        stats.record_session(100, 2.0);
+        assert_eq!(stats.total_clicks, 100);
+        assert!((stats.total_seconds - 2.0).abs() < 0.001);
+        assert_eq!(stats.sessions, 1);
+        assert!((stats.average_cpu() - 50.0).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_stats_zero_click_session_ignored() {
+        let mut stats = UsageStats::default();
+        stats.record_session(0, 5.0);
+        assert_eq!(stats.sessions, 0);
+        assert_eq!(stats.total_clicks, 0);
+    }
+
+    #[test]
+    fn test_stats_multiple_sessions() {
+        let mut stats = UsageStats::default();
+        stats.record_session(100, 2.0);
+        stats.record_session(200, 4.0);
+        assert_eq!(stats.total_clicks, 300);
+        assert_eq!(stats.sessions, 2);
     }
 }
